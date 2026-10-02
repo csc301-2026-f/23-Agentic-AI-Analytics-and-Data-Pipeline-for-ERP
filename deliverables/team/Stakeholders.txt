@@ -1,0 +1,16 @@
+PARTNERS:
+1.
+Name: Sapna Singhal
+Title: Head of Operations
+Email: sapna@genledge.ai
+Contact type: Primary partner contact
+ 
+2.
+Name: Kulwant Yadav
+Title: Founder
+Email: kulwant@genledge.ai
+Contact type: Secondary partner contact
+
+TA:
+Name: Salman Sayeed
+Email: salman.sayeed@mail.utoronto.ca
