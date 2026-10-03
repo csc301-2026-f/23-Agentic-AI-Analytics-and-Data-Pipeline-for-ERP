@@ -11,6 +11,10 @@ Title: Founder
 Email: kulwant@genledge.ai
 Contact type: Secondary partner contact
 
-TA:
+Lead TA:
+Name: Pritish Mishra
+Email: pritish.mishra@mail.utoronto.ca
+
+Mentor TA:
 Name: Salman Sayeed
 Email: salman.sayeed@mail.utoronto.ca
