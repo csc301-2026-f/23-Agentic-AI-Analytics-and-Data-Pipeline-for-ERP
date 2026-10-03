@@ -152,7 +152,7 @@ Our first partner meeting was on Friday, September 25. GenLedge explained their 
 
 ### Q9: How will you organize your team?
 
-We will track our work on a Jira board. GenLedge will invite our team, and we will ask them to add Salman as well. Once we have access, we will write the user stories, split them into tasks with one owner, a priority and a due date each, and use Jira's timeline view to divide work. Until then, we are tracking Deliverable 1 tasks in Linear. Code and reviews live on GitHub, minutes are kept in the repo, Discord is for team chat and WhatsApp is for quick questions with GenLedge.
+We will track our work on a Jira board. GenLedge will invite our team, and we will ask them to add Salman as well. Once we have access, we will write the user stories, split them into tasks with one owner, a priority and a due date each, and use Jira's timeline view to divide work. Until then, we are tracking Deliverable 1 tasks in [Linear](https://linear.app/csc301-team/team/CSC/active). Code and reviews live on GitHub, minutes are kept in the repo, Discord is for team chat and WhatsApp is for quick questions with GenLedge.
 
 MVP stories agreed with GenLedge come first, followed by blocking work (data access, agent harness, analytics API) before the features that depend on it. After that, whatever is due soonest goes first. Tasks are assigned at the weekly team sync based on each person's role, interests and workload. High-impact tasks only go to someone confident they can deliver production-quality code. Issues move from Backlog → Todo → In Progress → In Review → Done. A task is only Done once its PR is approved by a teammate and merged.
 
