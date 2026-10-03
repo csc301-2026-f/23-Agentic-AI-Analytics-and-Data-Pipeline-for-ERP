@@ -16,7 +16,7 @@ This repository currently contains planning materials for Deliverable 1. Impleme
 
 ## Task management and communication
 
-- Task tracking: Jira once GenLedge access is available; Linear is being used temporarily for Deliverable 1 tasks.
+- Task tracking: Jira once GenLedge access is available; [Linear](https://linear.app/csc301-team/team/CSC/active) is being used temporarily for Deliverable 1 tasks.
 - Partner communication: WhatsApp with GenLedge contacts Kulwant Yadav and Sapna Singhal.
 - Internal communication: Discord for team coordination and PR review requests.
 - Meeting minutes: [`deliverables/team/minutes/`](deliverables/team/minutes/)
