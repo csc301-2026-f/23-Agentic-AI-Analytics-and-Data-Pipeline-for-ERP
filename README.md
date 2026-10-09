@@ -25,21 +25,21 @@ This repository contains planning materials for Deliverable 1 and a minimal Reac
 
 The frontend scaffold uses React, TypeScript, and Vite. The backend scaffold uses FastAPI.
 
-Run the frontend from `src/frontend`:
-
-```sh
-npm install
-npm run dev
-```
-
-Run the backend from the repository root:
+Run the backend and frontend in two separate terminals. Start the backend from the repository root:
 
 ```sh
 pip install -r requirements.txt
 uvicorn src.backend.app:app --reload
 ```
 
-The backend health endpoint is `GET /api/health`.
+Then start the frontend from `src/frontend`:
+
+```sh
+npm install
+npm run dev
+```
+
+The frontend sends chat messages to `POST /api/chat`, which currently returns a randomly selected response. The Vite development server proxies `/api` requests to the backend on port 8000. The backend health endpoint is `GET /api/health`.
 
 ## External dependencies
 
