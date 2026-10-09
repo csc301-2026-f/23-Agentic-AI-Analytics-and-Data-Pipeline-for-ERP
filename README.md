@@ -12,7 +12,7 @@ CSC301 team project for GenLedge's agentic analytics capability. The goal is to 
 
 ## Project status
 
-This repository currently contains planning materials for Deliverable 1. Implementation has not started yet. The team is still finalizing the analytics engine stack, data warehouse interface with the other GenLedge CSC301 team, and repository/IP access details with GenLedge and course staff.
+This repository contains planning materials for Deliverable 1 and a minimal React/TypeScript/Vite frontend and FastAPI backend scaffold. Project-specific analytics functionality has not started yet. The team is still finalizing the analytics engine stack, data warehouse interface with the other GenLedge CSC301 team, and repository/IP access details with GenLedge and course staff.
 
 ## Task management and communication
 
@@ -23,16 +23,23 @@ This repository currently contains planning materials for Deliverable 1. Impleme
 
 ## Development setup
 
-Development requirements are not finalized for D1. The team is considering Node.js and Python for the analytics engine and agent harness. PostgreSQL is currently the planned warehouse/data lake technology.
+The frontend scaffold uses React, TypeScript, and Vite. The backend scaffold uses FastAPI.
 
-Once implementation begins, this section will be updated with:
+Run the frontend from `src/frontend`:
 
-1. required languages and package managers,
-2. environment variables and secrets setup,
-3. database setup and seed/synthetic data instructions,
-4. commands for running the app locally,
-5. test and lint commands,
-6. deployment instructions.
+```sh
+npm install
+npm run dev
+```
+
+Run the backend from the repository root:
+
+```sh
+pip install -r requirements.txt
+uvicorn src.backend.app:app --reload
+```
+
+The backend health endpoint is `GET /api/health`.
 
 ## External dependencies
 
