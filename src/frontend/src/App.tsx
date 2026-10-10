@@ -1,10 +1,15 @@
+'use client'
+
 import { useEffect, useRef, useState, type FormEvent } from 'react'
+import Link from 'next/link'
+import { ChartRenderer, type AnalyticsChartSpec } from './components/charts'
 import { sendChatMessage } from './services/chat'
 
 type Message = {
   id: number
   role: 'assistant' | 'user'
   content: string
+  chart?: AnalyticsChartSpec
 }
 
 const welcomeMessage: Message = {
@@ -56,13 +61,18 @@ function App() {
     setIsThinking(true)
 
     try {
-      const reply = await sendChatMessage(content, controller.signal)
+      const result = await sendChatMessage(content, controller.signal)
       if (controller.signal.aborted) return
 
       const replyId = nextMessageId.current++
       setMessages((currentMessages) => [
         ...currentMessages,
-        { id: replyId, role: 'assistant', content: reply },
+        {
+          id: replyId,
+          role: 'assistant',
+          content: result.response,
+          chart: result.chart ?? undefined,
+        },
       ])
     } catch (error) {
       if (!controller.signal.aborted) {
@@ -84,12 +94,12 @@ function App() {
     <main className="app-shell">
       <header className="topbar">
         <div className="topbar-inner">
-          <a className="brand" href="#" aria-label="GenLedge home">
+          <Link className="brand" href="/" aria-label="GenLedge home">
             gen<span>ledge</span>
             <span className="brand-mark" aria-hidden="true">
               ↗
             </span>
-          </a>
+          </Link>
           <nav className="breadcrumb" aria-label="Breadcrumb">
             <span>Workspace</span>
             <span className="breadcrumb-chevron" aria-hidden="true">
@@ -128,6 +138,7 @@ function App() {
                     </div>
                   )}
                   <p>{message.content}</p>
+                  {message.chart && <ChartRenderer spec={message.chart} />}
                 </article>
               ))}
               {isThinking && (

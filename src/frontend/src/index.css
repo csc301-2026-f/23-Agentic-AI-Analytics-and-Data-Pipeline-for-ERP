@@ -350,6 +350,45 @@ button {
   line-height: 1.5;
 }
 
+.analytics-chart {
+  width: 680px;
+  max-width: 100%;
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.analytics-chart-title {
+  margin: 0 0 12px;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.analytics-chart-canvas {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+}
+
+.analytics-chart-y-axis-title {
+  display: flex;
+  flex: 0 0 22px;
+  align-items: center;
+  justify-content: center;
+  color: #667085;
+  font-size: 12px;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+.analytics-chart-canvas > .recharts-responsive-container {
+  flex: 1;
+  min-width: 0;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;

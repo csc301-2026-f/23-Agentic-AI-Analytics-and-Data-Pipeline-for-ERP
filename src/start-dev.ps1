@@ -82,5 +82,5 @@ Start-Process -FilePath 'powershell.exe' -ArgumentList @(
     $frontendEncodedCommand
 ) | Out-Null
 
-Write-Host 'Started the frontend in a new PowerShell window. The backend health check passed.'
-Write-Host 'Keep both windows open. Vite will print the frontend URL when it is ready.'
+Write-Host 'Started the Next.js frontend in a new PowerShell window. The backend health check passed.'
+Write-Host 'Keep both windows open. Next.js will print the frontend URL when it is ready (usually http://localhost:3000).'

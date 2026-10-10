@@ -10,8 +10,9 @@ powershell -ExecutionPolicy Bypass -File .\src\start-dev.ps1
 
 The script checks the Python dependencies, installs them from `requirements.txt`
 if needed, starts the FastAPI backend, and waits for its health check before
-opening a PowerShell window for Vite. Leave both windows open while using the
-app. Open the frontend URL printed by Vite, usually <http://localhost:5173/>.
+opening a PowerShell window for the Next.js frontend. Leave both windows open
+while using the app. Open the frontend URL printed by Next.js, usually
+<http://localhost:3000/>.
 
 ## Start the servers manually
 
