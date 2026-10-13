@@ -44,12 +44,17 @@ The draft stores only the `evidenceId` reference.
 - `POST /api/review/drafts/{draft_id}/revisions` — create a new pending
   revision, retaining the conversation and draft IDs.
 - `POST /api/review/drafts/{draft_id}/approve` — approve the pending revision.
-- `POST /api/review/drafts/{draft_id}/reject` — reject it with a required
-  `feedback` string.
+  Requires `{"expectedRevision": 1}` for the revision currently displayed by the
+  reviewer.
+- `POST /api/review/drafts/{draft_id}/reject` — reject it with required
+  `expectedRevision` and `feedback` fields.
 - `GET /api/reports/{draft_id}/approved` — unauthenticated business-user view
   of report payload only, and only when the latest revision is approved.
 
-Invalid or repeated decisions return `409 Conflict`; absent drafts return
-`404 Not Found`; unavailable/unconfigured storage returns `503 Service
-Unavailable`. The reviewer routes require `X-Reviewer-Secret`. This is a local
-demo gate, not production authentication.
+The repository compares `expectedRevision` to the latest revision after taking
+the per-draft transaction lock. Stale expected revisions and repeated/invalid
+decisions return `409 Conflict`; absent request fields return `422
+Unprocessable Entity`; absent drafts return `404 Not Found`;
+unavailable/unconfigured storage returns `503 Service Unavailable`. The
+reviewer routes require `X-Reviewer-Secret`. This is a local demo gate, not
+production authentication.

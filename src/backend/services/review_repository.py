@@ -32,6 +32,7 @@ class ReviewRepository(Protocol):
     def decide(
         self,
         draft_id: UUID,
+        expected_revision: int,
         status: str,
         feedback: str | None,
     ) -> DraftReport: ...
@@ -125,6 +126,7 @@ class PostgresReviewRepository:
     def decide(
         self,
         draft_id: UUID,
+        expected_revision: int,
         status: str,
         feedback: str | None,
     ) -> DraftReport:
@@ -147,6 +149,11 @@ class PostgresReviewRepository:
             current = cursor.fetchone()
             if current is None:
                 raise DraftNotFoundError
+            if int(current["revision"]) != expected_revision:
+                raise InvalidReviewTransitionError(
+                    f"Expected revision {expected_revision}, but the latest revision is "
+                    f"{current['revision']}"
+                )
             if current["status"] != "pending":
                 raise InvalidReviewTransitionError(
                     f"Cannot transition a {current['status']} draft to {status}"

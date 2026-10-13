@@ -2,6 +2,7 @@ from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from src.backend.schemas.review import (
+    ApproveDraftRequest,
     ApprovedReportResponse,
     CreateRevisionPayload,
     DraftReport,
@@ -57,15 +58,29 @@ class ReviewService:
     def get_draft(self, draft_id: UUID) -> DraftReport:
         return self._repository.get_latest_draft(draft_id)
 
-    def approve(self, draft_id: UUID) -> DraftReport:
-        return self._repository.decide(draft_id, "approved", None)
+    def approve(
+        self,
+        draft_id: UUID,
+        request: ApproveDraftRequest,
+    ) -> DraftReport:
+        return self._repository.decide(
+            draft_id,
+            request.expected_revision,
+            "approved",
+            None,
+        )
 
     def reject(
         self,
         draft_id: UUID,
         request: RejectDraftRequest,
     ) -> DraftReport:
-        return self._repository.decide(draft_id, "rejected", request.feedback)
+        return self._repository.decide(
+            draft_id,
+            request.expected_revision,
+            "rejected",
+            request.feedback,
+        )
 
     def get_approved_report(self, draft_id: UUID) -> ApprovedReportResponse:
         draft = self._repository.get_latest_draft(draft_id)

@@ -6,6 +6,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 
 from src.backend.schemas.review import (
+    ApproveDraftRequest,
     ApprovedReportResponse,
     CreateRevisionPayload,
     DraftListResponse,
@@ -143,10 +144,11 @@ def create_revision(
 )
 def approve_draft(
     draft_id: UUID,
+    request: ApproveDraftRequest,
     _: ReviewerAccess,
     repository: ReviewRepositoryDependency,
 ) -> DraftReport:
-    return _run(lambda: _service(repository).approve(draft_id))
+    return _run(lambda: _service(repository).approve(draft_id, request))
 
 
 @router.post(

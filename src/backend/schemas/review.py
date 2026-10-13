@@ -68,7 +68,12 @@ class CreateRevisionPayload(ReviewModel):
 
 
 class RejectDraftRequest(ReviewModel):
+    expected_revision: int = Field(ge=1)
     feedback: str = Field(min_length=1, max_length=4000)
+
+
+class ApproveDraftRequest(ReviewModel):
+    expected_revision: int = Field(ge=1)
 
 
 class DraftReport(ReviewModel):
