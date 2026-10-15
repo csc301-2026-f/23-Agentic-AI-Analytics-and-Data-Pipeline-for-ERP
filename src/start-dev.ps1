@@ -9,6 +9,7 @@ if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
 }
 
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
+. (Join-Path $PSScriptRoot 'load-demo-env.ps1')
 $frontendDirectory = Join-Path $repositoryRoot 'src\frontend'
 $requirementsFile = Join-Path $repositoryRoot 'requirements.txt'
 $pythonPath = (Get-Command python).Source
@@ -30,8 +31,8 @@ $quotedRepositoryRoot = $repositoryRoot.Replace("'", "''")
 $quotedFrontendDirectory = $frontendDirectory.Replace("'", "''")
 $quotedPythonPath = $pythonPath.Replace("'", "''")
 
-$backendCommand = "Set-Location -LiteralPath '$quotedRepositoryRoot'; & '$quotedPythonPath' -m uvicorn src.backend.app:app --reload"
-$frontendCommand = "Set-Location -LiteralPath '$quotedFrontendDirectory'; npm run dev"
+$backendCommand = "Set-Location -LiteralPath '$quotedRepositoryRoot'; & '$quotedPythonPath' -m uvicorn src.backend.app:app --reload --host 127.0.0.1"
+$frontendCommand = "Set-Location -LiteralPath '$quotedFrontendDirectory'; npm run dev -- --hostname 127.0.0.1"
 
 $backendEncodedCommand = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($backendCommand))
 $frontendEncodedCommand = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($frontendCommand))
@@ -83,4 +84,4 @@ Start-Process -FilePath 'powershell.exe' -ArgumentList @(
 ) | Out-Null
 
 Write-Host 'Started the Next.js frontend in a new PowerShell window. The backend health check passed.'
-Write-Host 'Keep both windows open. Next.js will print the frontend URL when it is ready (usually http://localhost:3000).'
+Write-Host 'Keep both windows open. Open http://127.0.0.1:3000/demo and http://127.0.0.1:3000/review.'

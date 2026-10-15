@@ -106,6 +106,14 @@ function App() {
               ›
             </span>
             <span className="breadcrumb-current">Analytics</span>
+            <span className="breadcrumb-chevron" aria-hidden="true">
+              ›
+            </span>
+            <Link href="/demo">Business demo</Link>
+            <span className="breadcrumb-chevron" aria-hidden="true">
+              ›
+            </span>
+            <Link href="/review">Review</Link>
           </nav>
         </div>
       </header>
