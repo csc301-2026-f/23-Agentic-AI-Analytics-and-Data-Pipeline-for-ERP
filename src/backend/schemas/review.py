@@ -93,6 +93,16 @@ class DraftListResponse(ReviewModel):
     drafts: list[DraftReport]
 
 
+class DemoDraftStatus(ReviewModel):
+    """Business-user lifecycle projection with no report or reviewer-only data."""
+
+    draft_id: UUID
+    revision: int = Field(ge=1)
+    status: ReviewStatus
+    updated_at: datetime
+    reviewed_at: datetime | None
+
+
 class ApprovedReportResponse(ReviewModel):
     """Business-user projection; deliberately excludes evidence and review metadata."""
 

@@ -27,7 +27,11 @@ The frontend uses Next.js, React, TypeScript, and Recharts for reusable analytic
 
 ### Start both services on Windows
 
-From the repository root, install the frontend dependencies and run the development launcher:
+For the persistent D2 report-review demo, define `DATABASE_URL` and
+`REVIEWER_DEMO_SECRET` in the root `.env` and run the local launcher. It loads
+those values into the backend and frontend server processes without displaying
+them, enables the localhost-only review demo, and binds both servers to
+`127.0.0.1`:
 
 ```powershell
 Set-Location src\frontend
@@ -36,7 +40,19 @@ Set-Location ..\..
 .\src\start-dev.ps1
 ```
 
-The launcher checks or installs the Python backend requirements, starts the FastAPI backend if it is not already healthy, then starts the Next.js development server in a separate PowerShell window. Keep both service windows open. Open the frontend URL printed by Next.js (usually `http://localhost:3000`).
+Keep both service windows open. Open `http://127.0.0.1:3000/demo` for the
+business user and `http://127.0.0.1:3000/review` for the reviewer. The demo
+submits a fixed sample in place of Agent Harness output. The shared-secret
+reviewer gate is a localhost development convenience, not production
+authentication. Do not expose the development server to a LAN. If another API
+is already listening on port 8000, stop it first unless it was started with
+this root `.env` and the demo flags; the launcher reuses a healthy API process.
+
+The launcher does not apply database migrations. The review table must already
+exist in the selected PostgreSQL database. Review
+[`src/backend/migrations/README.md`](src/backend/migrations/README.md) for the
+local migration and route details; do not apply a migration to shared Supabase
+without the team's approved procedure.
 
 ### Start services manually
 

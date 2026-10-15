@@ -36,6 +36,9 @@ class MemoryReviewRepository:
     def list_drafts(self) -> list[DraftReport]:
         return [versions[-1] for versions in self.rows.values()]
 
+    def list_draft_history(self) -> list[DraftReport]:
+        return [draft for versions in self.rows.values() for draft in versions]
+
     def get_latest_draft(self, draft_id: UUID) -> DraftReport:
         if draft_id not in self.rows:
             raise DraftNotFoundError
@@ -103,8 +106,9 @@ def repository() -> MemoryReviewRepository:
 def client(repository: MemoryReviewRepository, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("REVIEWER_DEMO_SECRET", REVIEWER_SECRET)
     monkeypatch.setenv("DATABASE_URL", "postgresql://unused-by-test")
+    monkeypatch.setenv("GENLEDGE_DEMO_MODE", "1")
     app.dependency_overrides[get_review_repository] = lambda: repository
-    with TestClient(app) as test_client:
+    with TestClient(app, client=("127.0.0.1", 12345)) as test_client:
         yield test_client
     app.dependency_overrides.clear()
 
@@ -352,10 +356,129 @@ def test_pending_report_is_not_publicly_retrievable(client: TestClient) -> None:
     assert client.get(f"/api/reports/{draft['draftId']}/approved").status_code == 404
 
 
+def test_business_status_does_not_disclose_unapproved_payload(
+    client: TestClient,
+) -> None:
+    draft = create_draft(client)
+
+    response = client.get(f"/api/reports/{draft['draftId']}/status")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "pending"
+    assert response.json()["revision"] == 1
+    assert "reportPayload" not in response.json()
+    assert "evidenceId" not in response.json()
+    assert "rejectionFeedback" not in response.json()
+    assert client.get(f"/api/reports/{draft['draftId']}/approved").status_code == 404
+
+
+def test_local_demo_submission_and_revision_return_status_only(
+    client: TestClient,
+) -> None:
+    submitted = client.post("/api/demo/reports")
+
+    assert submitted.status_code == 201
+    assert submitted.json()["status"] == "pending"
+    assert submitted.json()["revision"] == 1
+    assert "reportPayload" not in submitted.json()
+
+    rejected = client.post(
+        f"/api/review/drafts/{submitted.json()['draftId']}/reject",
+        json={"expectedRevision": 1, "feedback": "Please clarify the summary."},
+        headers=reviewer_headers(),
+    )
+    assert rejected.status_code == 200
+
+    revision = client.post(
+        f"/api/demo/reports/{submitted.json()['draftId']}/revisions"
+    )
+    assert revision.status_code == 201
+    assert revision.json()["revision"] == 2
+    assert revision.json()["status"] == "pending"
+    assert client.get(
+        f"/api/reports/{submitted.json()['draftId']}/approved"
+    ).status_code == 404
+
+
+def test_reviewer_history_keeps_decided_revision_after_new_revision(
+    client: TestClient,
+) -> None:
+    draft = create_draft(client)
+    draft_id = draft["draftId"]
+    rejection_feedback = "Please clarify the summary."
+
+    rejected = client.post(
+        f"/api/review/drafts/{draft_id}/reject",
+        json={"expectedRevision": 1, "feedback": rejection_feedback},
+        headers=reviewer_headers(),
+    )
+    assert rejected.status_code == 200
+    revised = client.post(
+        f"/api/review/drafts/{draft_id}/revisions",
+        json={
+            "evidenceId": "evidence_revision_2",
+            "reportPayload": {"title": "Revised cash flow"},
+        },
+        headers=reviewer_headers(),
+    )
+    assert revised.status_code == 201
+
+    queue = client.get("/api/review/drafts", headers=reviewer_headers())
+    history = client.get("/api/review/drafts/history", headers=reviewer_headers())
+
+    assert [(item["revision"], item["status"]) for item in queue.json()["drafts"]] == [
+        (2, "pending")
+    ]
+    assert {
+        (item["revision"], item["status"], item["rejectionFeedback"])
+        for item in history.json()["drafts"]
+    } == {
+        (1, "rejected", rejection_feedback),
+        (2, "pending", None),
+    }
+
+
+@pytest.mark.parametrize(
+    ("mode", "app_env", "status_code"),
+    [
+        (None, "development", 404),
+        ("1", "production", 404),
+    ],
+)
+def test_demo_submission_is_disabled_when_not_in_local_demo_mode(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+    mode: str | None,
+    app_env: str,
+    status_code: int,
+) -> None:
+    if mode is None:
+        monkeypatch.delenv("GENLEDGE_DEMO_MODE", raising=False)
+    else:
+        monkeypatch.setenv("GENLEDGE_DEMO_MODE", mode)
+    monkeypatch.setenv("APP_ENV", app_env)
+
+    assert client.post("/api/demo/reports").status_code == status_code
+
+
+def test_demo_submission_rejects_non_loopback_clients(
+    repository: MemoryReviewRepository,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("GENLEDGE_DEMO_MODE", "1")
+    app.dependency_overrides[get_review_repository] = lambda: repository
+    with TestClient(app, client=("192.0.2.10", 12345)) as remote_client:
+        response = remote_client.post("/api/demo/reports")
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 403
+
+
 def test_reviewer_endpoints_reject_missing_or_incorrect_credentials(
     client: TestClient,
 ) -> None:
     assert client.get("/api/review/drafts").status_code == 401
+    assert client.get("/api/review/drafts/history").status_code == 401
     assert client.get(
         "/api/review/drafts",
         headers={"X-Reviewer-Secret": "incorrect"},

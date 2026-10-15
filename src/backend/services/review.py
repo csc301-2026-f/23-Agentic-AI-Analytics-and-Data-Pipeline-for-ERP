@@ -55,6 +55,9 @@ class ReviewService:
     def list_drafts(self) -> list[DraftReport]:
         return self._repository.list_drafts()
 
+    def list_draft_history(self) -> list[DraftReport]:
+        return self._repository.list_draft_history()
+
     def get_draft(self, draft_id: UUID) -> DraftReport:
         return self._repository.get_latest_draft(draft_id)
 

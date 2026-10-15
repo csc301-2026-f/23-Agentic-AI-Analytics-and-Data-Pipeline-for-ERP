@@ -34,12 +34,41 @@ amounts must be decimal strings such as `"12000.00"`. The payload also rejects
 `sql`, `supportingRows`, `evidence`, and `evidenceId` keys at any nesting level.
 The draft stores only the `evidenceId` reference.
 
+## Local two-screen review demonstration
+
+The demo launcher reads only `DATABASE_URL` and `REVIEWER_DEMO_SECRET` from the
+repository-root `.env` without printing either value. It enables demo mode for
+that local process, starts both services on `127.0.0.1`, and keeps the reviewer
+secret in the Next.js server process. Do not expose the development server to a
+LAN or deploy this shared-secret gate to production. The localhost boundary is
+a development convenience, not reviewer login or production authentication.
+
+From the repository root, start the demo with:
+
+```powershell
+.\src\start-dev.ps1
+```
+
+The script does not apply migrations. Apply the migration above only to a
+database you are authorized to modify. Do not run it against the shared Supabase
+database without the team's explicit migration procedure and approval. If the
+review table is missing, the API reports storage unavailable until the schema
+has been provisioned.
+
+Open `http://127.0.0.1:3000/demo` as the business user and
+`http://127.0.0.1:3000/review` as the reviewer. The sample submission is a
+fixed demo substitute, not an Agent Harness integration. Rejected feedback is
+retained; creating a revised sample does not claim automatic regeneration.
+If an API is already listening on port 8000, stop it first unless it uses this
+root `.env` and the local demo flags; the launcher reuses a healthy API process.
+
 ## Routes
 
 - `POST /api/review/drafts` — create a pending draft. Requires the reviewer
   demo gate for this standalone phase; trusted backend-to-backend integration
   should own this operation later.
 - `GET /api/review/drafts` — list the latest revision of each draft.
+- `GET /api/review/drafts/history` — list all stored revisions and decisions.
 - `GET /api/review/drafts/{draft_id}` — retrieve the latest reviewer draft.
 - `POST /api/review/drafts/{draft_id}/revisions` — create a new pending
   revision, retaining the conversation and draft IDs.
@@ -50,6 +79,13 @@ The draft stores only the `evidenceId` reference.
   `expectedRevision` and `feedback` fields.
 - `GET /api/reports/{draft_id}/approved` — unauthenticated business-user view
   of report payload only, and only when the latest revision is approved.
+- `GET /api/reports/{draft_id}/status` — business-safe status projection without
+  report payload, evidence ID, or reviewer feedback.
+- `POST /api/demo/reports` — localhost-only fixed sample submission, returning
+  status metadata only. Requires `GENLEDGE_DEMO_MODE=1` and is disabled in
+  production.
+- `POST /api/demo/reports/{draft_id}/revisions` — localhost-only fixed revised
+  sample submission, returning status metadata only.
 
 The repository compares `expectedRevision` to the latest revision after taking
 the per-draft transaction lock. Stale expected revisions and repeated/invalid

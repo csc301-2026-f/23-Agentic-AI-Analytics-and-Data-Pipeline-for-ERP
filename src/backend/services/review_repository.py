@@ -27,6 +27,8 @@ class ReviewRepository(Protocol):
 
     def list_drafts(self) -> list[DraftReport]: ...
 
+    def list_draft_history(self) -> list[DraftReport]: ...
+
     def get_latest_draft(self, draft_id: UUID) -> DraftReport: ...
 
     def decide(
@@ -57,7 +59,7 @@ class PostgresReviewRepository:
                 row_factory=dict_row,
             ) as connection:
                 yield connection
-        except psycopg.OperationalError as error:
+        except (psycopg.OperationalError, psycopg.errors.UndefinedTable) as error:
             raise ReviewStorageUnavailable(
                 "PostgreSQL review storage is unavailable"
             ) from error
@@ -102,6 +104,17 @@ class PostgresReviewRepository:
                     ORDER BY draft_id, revision DESC
                 ) AS latest
                 ORDER BY latest.updated_at DESC
+                """
+            )
+            return [self._from_row(row) for row in cursor.fetchall()]
+
+    def list_draft_history(self) -> list[DraftReport]:
+        with self._connection() as connection, connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT *
+                FROM review_drafts
+                ORDER BY updated_at DESC, draft_id, revision DESC
                 """
             )
             return [self._from_row(row) for row in cursor.fetchall()]
