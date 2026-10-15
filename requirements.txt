@@ -1,2 +1,5 @@
 fastapi
 uvicorn[standard]
+sqlglot==30.22.0
+pytest
+httpx
