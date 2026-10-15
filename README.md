@@ -12,7 +12,11 @@ CSC301 team project for GenLedge's agentic analytics capability. The goal is to 
 
 ## Project status
 
-This repository contains planning materials for Deliverable 1 and a minimal Next.js/React/TypeScript frontend and FastAPI backend scaffold. Project-specific analytics functionality has not started yet. The team is still finalizing the analytics engine stack, data warehouse interface with the other GenLedge CSC301 team, and repository/IP access details with GenLedge and course staff.
+This repository contains the Deliverable 1 planning materials and an active Deliverable 2 implementation using Next.js/React/TypeScript and FastAPI. Current components include reusable chart rendering, PostgreSQL-backed draft review/approval services, revision and feedback handling, a safe SQL validator and typed evidence contracts, and local two-screen report-review demo interfaces at `/demo` (business) and `/review` (reviewer).
+
+The demo **mock** workflow has been exercised end to end. The **real PostgreSQL-backed browser workflow** has not yet been verified across both screens. The current demo uses fixed sample reports rather than Agent Harness output. The shared Supabase connection has been verified; schema migrations on the shared database remain coordinated team work. SQL execution against live warehouse data, evidence persistence/retrieval, automated reviewer-feedback-to-agent handoff, dynamic source/tool discovery and durable agent checkpoints remain integration or target-state tasks.
+
+The localhost reviewer boundary uses a shared demo secret and does **not** provide production authentication. Never expose it to the LAN or a public deployment.
 
 ## Task management and communication
 
@@ -106,13 +110,18 @@ Line series are arrays of `[x, y]` points. Bar chart data can be `[category, val
 
 Create a Vercel project from this repository and set its **Root Directory** to `src/frontend`. Vercel will detect Next.js and use the frontend's `npm run build` script. Set the `BACKEND_URL` environment variable for the deployment to the publicly reachable origin of the separately hosted FastAPI backend (for example, `https://api.example.com`), then deploy. Vercel hosts the Next.js frontend; the FastAPI backend must be hosted separately and reachable from Vercel.
 
-## External dependencies
+## Architecture and dependencies
 
-Potential dependencies under consideration include:
+- **Current application:** Next.js/React/TypeScript frontend and FastAPI Python backend.
 
-- PostgreSQL for the analytics warehouse/data lake,
-- an LLM or agent API for the analytics agent harness,
-- a frontend/reporting interface framework,
-- CI and deployment tooling.
+- **Database:** PostgreSQL for D2 warehouse and application state; shared Supabase dev connection verified, shared migrations coordinated.
 
-Final choices will be documented here as they are made.
+- **Validation:** sqlglot-based read-only query validation is implemented; safely restricted PostgreSQL query execution and evidence persistence are pending.
+
+- **Reporting UI:** Recharts/structured chart components; demo /demo and /review interfaces using fixed samples.
+
+- **Agent Harness:** proposed bounded plan–discover–execute–observe–decide architecture; dynamic registry/checkpoints not yet proven end to end.
+
+- **Data sources:** PostgreSQL now; CSV/Excel intended as ad-hoc D2 sources; SAP/QuickBooks sandbox exploration does not mean connectors are live.
+
+For target-state design, tradeoffs and acceptance tests, see the REP02-22 architecture decision record.
