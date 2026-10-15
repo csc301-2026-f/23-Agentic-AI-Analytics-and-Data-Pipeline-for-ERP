@@ -1,7 +1,7 @@
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 
-from security.reviewer import REVIEWER_HEADER, require_reviewer
+from src.backend.security.reviewer import REVIEWER_HEADER, require_reviewer
 
 app = FastAPI()
 
@@ -14,14 +14,14 @@ def evidence():
 client = TestClient(app)
 
 
-def test_missing_token_is_forbidden(monkeypatch):
+def test_missing_token_is_unauthorized(monkeypatch):
     monkeypatch.setenv("REVIEWER_DEMO_SECRET", "secret")
-    assert client.get("/api/evidence/x").status_code == 403
+    assert client.get("/api/evidence/x").status_code == 401
 
 
-def test_wrong_token_is_forbidden(monkeypatch):
+def test_wrong_token_is_unauthorized(monkeypatch):
     monkeypatch.setenv("REVIEWER_DEMO_SECRET", "secret")
-    assert client.get("/api/evidence/x", headers={REVIEWER_HEADER: "nope"}).status_code == 403
+    assert client.get("/api/evidence/x", headers={REVIEWER_HEADER: "nope"}).status_code == 401
 
 
 def test_correct_token_is_allowed(monkeypatch):
