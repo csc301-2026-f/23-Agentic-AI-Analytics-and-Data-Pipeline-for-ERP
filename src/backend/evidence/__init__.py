@@ -1,0 +1,1 @@
+"""Safe read-only querying and evidence capture (REP02-18)."""
