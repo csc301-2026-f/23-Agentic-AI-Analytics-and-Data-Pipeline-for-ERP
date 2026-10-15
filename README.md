@@ -2,6 +2,8 @@
 
 CSC301 team project for GenLedge's agentic analytics capability. The goal is to let business users request reports in plain language and have an analytics agent identify relevant warehouse data, ask clarifying questions when needed, and produce traceable reports for review.
 
+[Run the two-screen report review demo (MOCK mode)](#run-the-two-screen-report-review-demo-mock-mode)
+
 ## Deliverable 1
 
 - Planning document: [`deliverables/D1/planning.md`](deliverables/D1/planning.md)
@@ -35,7 +37,7 @@ For the persistent D2 report-review demo, define `DATABASE_URL` and
 `REVIEWER_DEMO_SECRET` in the root `.env` and run the local launcher. It loads
 those values into the backend and frontend server processes without displaying
 them, enables the localhost-only review demo, and binds both servers to
-`127.0.0.1`:
+`localhost`:
 
 ```powershell
 Set-Location src\frontend
@@ -44,8 +46,8 @@ Set-Location ..\..
 .\src\start-dev.ps1
 ```
 
-Keep both service windows open. Open `http://127.0.0.1:3000/demo` for the
-business user and `http://127.0.0.1:3000/review` for the reviewer. The demo
+Keep both service windows open. Open `http://localhost:3000/demo` for the
+business user and `http://localhost:3000/review` for the reviewer. The demo
 submits a fixed sample in place of Agent Harness output. The shared-secret
 reviewer gate is a localhost development convenience, not production
 authentication. Do not expose the development server to a LAN. If another API
@@ -125,3 +127,52 @@ Create a Vercel project from this repository and set its **Root Directory** to `
 - **Data sources:** PostgreSQL now; CSV/Excel intended as ad-hoc D2 sources; SAP/QuickBooks sandbox exploration does not mean connectors are live.
 
 For target-state design, tradeoffs and acceptance tests, see the REP02-22 architecture decision record.
+
+## Run the two-screen report review demo (MOCK mode)
+
+The D2 report-review demo can run entirely through the Next.js frontend using mock data. **No PostgreSQL database, FastAPI backend, database migrations, or environment variables are required.**
+
+From the repository root, run:
+
+```powershell
+cd src/frontend
+npm install
+npm run dev
+```
+
+Once Next.js is running, open two browser windows:
+
+| Screen | URL |
+|---|---|
+| Business user | `http://localhost:3000/demo` |
+| Reviewer | `http://localhost:3000/review` |
+
+Both pages should display **MOCK — browser-local data**.
+
+#### Demo walkthrough
+
+1. On `/demo`, click **Submit sample cash-flow report**.
+2. On `/review`, refresh the draft queue and open the new pending report.
+3. Reject revision 1 with reviewer feedback.
+4. On `/demo`, refresh the report status and confirm the report has not been approved or released.
+5. Click **Submit revised sample** to create revision 2.
+6. On `/review`, refresh and approve revision 2.
+7. On `/demo`, refresh the status and confirm the approved report is visible.
+
+The demo also includes reviewer history, stored feedback within the mock session, and separation between pending and completed reports.
+
+**Important limitations:**
+
+- This is a frontend demonstration using mock data, not the live Agent Harness or PostgreSQL persistence.
+- Reports are fixed sample data; rejection does not automatically trigger AI regeneration.
+- Both screens should use the same browser origin (`localhost:3000`) and browser profile so they can share the mock data.
+- You may need to click **Refresh** to see changes made in the other window.
+- Mock data should not be treated as durable database storage.
+
+#### Real PostgreSQL integration (separate development setup)
+
+A PostgreSQL-backed development mode also exists, but it requires configuring `DATABASE_URL` and `REVIEWER_DEMO_SECRET`, completing the relevant database migrations, and starting both frontend and backend services with `src/start-dev.ps1`.
+
+This is **not required for the mock demo**. Do not run migrations or write demo records to the team's shared Supabase database without coordination.
+
+The real development-mode reviewer gate is localhost-only and is not production authentication. See `src/backend/migrations/README.md` for additional setup details.
