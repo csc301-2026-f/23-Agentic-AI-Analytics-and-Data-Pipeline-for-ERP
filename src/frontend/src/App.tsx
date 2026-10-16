@@ -3,13 +3,22 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import Link from 'next/link'
 import { ChartRenderer, type AnalyticsChartSpec } from './components/charts'
-import { sendChatMessage } from './services/chat'
+import { ChatRequestError, sendChatMessage, type Clarification } from './services/chat'
 
 type Message = {
   id: number
   role: 'assistant' | 'user'
   content: string
   chart?: AnalyticsChartSpec
+  clarification?: Clarification
+  undelivered?: boolean
+}
+
+type FailedRequest = {
+  content: string
+  userMessageId: number
+  message: string
+  retryable: boolean
 }
 
 const welcomeMessage: Message = {
@@ -23,47 +32,54 @@ function App() {
   const [messages, setMessages] = useState<Message[]>([welcomeMessage])
   const [draft, setDraft] = useState('')
   const [isThinking, setIsThinking] = useState(false)
-  const [requestError, setRequestError] = useState('')
+  const [failedRequest, setFailedRequest] = useState<FailedRequest | null>(null)
   const nextMessageId = useRef(1)
+  const conversationId = useRef<string | null>(null)
   const conversationEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const requestController = useRef<AbortController | null>(null)
 
+  const lastMessage = messages[messages.length - 1]
+  const openClarificationId =
+    lastMessage.role === 'assistant' && lastMessage.clarification ? lastMessage.id : null
+
   useEffect(() => {
     conversationEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, isThinking])
+  }, [messages, isThinking, failedRequest])
 
   function startNewAnalysis() {
     requestController.current?.abort()
     requestController.current = null
+    conversationId.current = null
     setMessages([welcomeMessage])
     setDraft('')
     setIsThinking(false)
-    setRequestError('')
+    setFailedRequest(null)
     nextMessageId.current = 1
     inputRef.current?.focus()
   }
 
-  async function sendMessage(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const content = draft.trim()
+  async function submitContent(content: string, retryMessageId?: number) {
     if (!content || isThinking) return
 
     const controller = new AbortController()
     requestController.current = controller
-    const messageId = nextMessageId.current++
-    setMessages((currentMessages) => [
-      ...currentMessages,
-      { id: messageId, role: 'user', content },
-    ])
-    setDraft('')
-    setRequestError('')
+    const userMessageId = retryMessageId ?? nextMessageId.current++
+    setMessages((currentMessages) =>
+      retryMessageId === undefined
+        ? [...currentMessages, { id: userMessageId, role: 'user', content }]
+        : currentMessages.map((message) =>
+            message.id === retryMessageId ? { ...message, undelivered: false } : message,
+          ),
+    )
+    setFailedRequest(null)
     setIsThinking(true)
 
     try {
-      const result = await sendChatMessage(content, controller.signal)
+      const result = await sendChatMessage(content, conversationId.current, controller.signal)
       if (controller.signal.aborted) return
 
+      conversationId.current = result.conversationId
       const replyId = nextMessageId.current++
       setMessages((currentMessages) => [
         ...currentMessages,
@@ -72,15 +88,25 @@ function App() {
           role: 'assistant',
           content: result.response,
           chart: result.chart ?? undefined,
+          clarification: result.clarification,
         },
       ])
     } catch (error) {
       if (!controller.signal.aborted) {
-        setRequestError(
-          error instanceof Error
-            ? error.message
-            : 'The assistant request failed. Please try again.',
+        setMessages((currentMessages) =>
+          currentMessages.map((message) =>
+            message.id === userMessageId ? { ...message, undelivered: true } : message,
+          ),
         )
+        setFailedRequest({
+          content,
+          userMessageId,
+          message:
+            error instanceof Error
+              ? error.message
+              : 'The assistant request failed. Try again, or edit your request.',
+          retryable: !(error instanceof ChatRequestError) || error.retryable,
+        })
       }
     } finally {
       if (requestController.current === controller) {
@@ -88,6 +114,29 @@ function App() {
         setIsThinking(false)
       }
     }
+  }
+
+  function sendMessage(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const content = draft.trim()
+    if (!content || isThinking) return
+    setDraft('')
+    void submitContent(content)
+  }
+
+  function retryFailedRequest() {
+    if (!failedRequest) return
+    void submitContent(failedRequest.content, failedRequest.userMessageId)
+  }
+
+  function editFailedRequest() {
+    if (!failedRequest) return
+    setMessages((currentMessages) =>
+      currentMessages.filter((message) => message.id !== failedRequest.userMessageId),
+    )
+    setDraft(failedRequest.content)
+    setFailedRequest(null)
+    inputRef.current?.focus()
   }
 
   return (
@@ -145,8 +194,38 @@ function App() {
                       GenLedge Assistant
                     </div>
                   )}
+                  {message.clarification && (
+                    <span className="clarification-tag">Needs clarification</span>
+                  )}
                   <p>{message.content}</p>
                   {message.chart && <ChartRenderer spec={message.chart} />}
+                  {message.clarification &&
+                    message.clarification.options.length > 0 && (
+                      <div
+                        aria-label="Suggested answers"
+                        className="clarification-options"
+                        role="group"
+                      >
+                        {message.clarification.options.map((option) => (
+                          <button
+                            className="clarification-option"
+                            disabled={
+                              message.id !== openClarificationId ||
+                              isThinking ||
+                              failedRequest !== null
+                            }
+                            key={option.value}
+                            onClick={() => void submitContent(option.value)}
+                            type="button"
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  {message.undelivered && (
+                    <span className="message-undelivered">Not delivered</span>
+                  )}
                 </article>
               ))}
               {isThinking && (
@@ -160,10 +239,26 @@ function App() {
                   </span>
                 </div>
               )}
-              {requestError && (
-                <p className="request-error" role="alert">
-                  {requestError}
-                </p>
+              {failedRequest && !isThinking && (
+                <div className="request-error" role="alert">
+                  <p>{failedRequest.message}</p>
+                  <div className="request-error-actions">
+                    {failedRequest.retryable ? (
+                      <>
+                        <button onClick={retryFailedRequest} type="button">
+                          Retry
+                        </button>
+                        <button onClick={editFailedRequest} type="button">
+                          Edit request
+                        </button>
+                      </>
+                    ) : (
+                      <button onClick={startNewAnalysis} type="button">
+                        Start new analysis
+                      </button>
+                    )}
+                  </div>
+                </div>
               )}
               <div ref={conversationEndRef} />
             </div>
@@ -179,7 +274,11 @@ function App() {
               autoComplete="off"
               id="message-input"
               onChange={(event) => setDraft(event.target.value)}
-              placeholder="Ask about cash flow, revenue, or an analysis..."
+              placeholder={
+                openClarificationId === null
+                  ? 'Ask about cash flow, revenue, or an analysis...'
+                  : 'Answer the question above, or type your own...'
+              }
               ref={inputRef}
               value={draft}
             />
@@ -195,6 +294,11 @@ function App() {
               </span>
             </button>
           </form>
+          {openClarificationId !== null && (
+            <p className="composer-hint">
+              Your answer continues the current request. Use New analysis to start over.
+            </p>
+          )}
         </footer>
       </section>
     </main>
