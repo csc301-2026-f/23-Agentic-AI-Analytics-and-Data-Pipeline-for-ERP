@@ -3,7 +3,7 @@ from datetime import date
 
 import pytest
 
-from evidence.safe_query import UnsafeQueryError, to_cell, validate_sql
+from src.backend.evidence.safe_query import UnsafeQueryError, to_cell, validate_sql
 
 CASH_FLOW = (
     "SELECT date_trunc('month', txn_date) AS month, "

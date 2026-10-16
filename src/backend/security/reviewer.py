@@ -29,5 +29,5 @@ def require_reviewer(
         x_reviewer_token.encode("utf-8"), expected.encode("utf-8")
     ):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Reviewer access required."
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Reviewer access required."
         )
