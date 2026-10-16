@@ -5,7 +5,10 @@ from pydantic.alias_generators import to_camel
 
 
 class ChatRequest(BaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
     message: str
+    conversation_id: str | None = None
 
 
 class LineChartSpec(BaseModel):
@@ -49,6 +52,22 @@ ChartSpec = Annotated[
 ]
 
 
+class ClarificationOption(BaseModel):
+    label: str
+    value: str
+
+
+class Clarification(BaseModel):
+    question: str
+    options: list[ClarificationOption] = []
+
+
 class ChatResponse(BaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+    conversation_id: str
+    message_id: str
+    status: Literal["clarification_needed"] | None = None
     response: str
     chart: ChartSpec | None = None
+    clarification: Clarification | None = None
