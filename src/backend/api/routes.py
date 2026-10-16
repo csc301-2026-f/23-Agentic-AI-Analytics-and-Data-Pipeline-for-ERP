@@ -1,11 +1,14 @@
 import random
 import re
+from uuid import uuid4
 
 from fastapi import APIRouter
 
 from src.backend.schemas.chat import (
     BarChartSpec,
     ChatRequest,
+    Clarification,
+    ClarificationOption,
     ChatResponse,
     LineChartSpec,
     PieChartSpec,
@@ -27,6 +30,73 @@ REPLIES = [
     "What part of this analysis would you like to explore in more detail?",
 ]
 
+CLARIFICATIONS = [
+    Clarification(
+        question="Which time period should this analysis cover?",
+        options=[
+            ClarificationOption(
+                label="January–March 2026", value="January through March 2026"
+            ),
+            ClarificationOption(label="Last 12 months", value="The last 12 months"),
+            ClarificationOption(label="Year to date", value="Year to date"),
+        ],
+    ),
+    Clarification(
+        question="Which metric do you mean?",
+        options=[
+            ClarificationOption(label="Net cash flow", value="Net cash flow"),
+            ClarificationOption(label="Cash inflows", value="Cash inflows"),
+            ClarificationOption(label="Cash outflows", value="Cash outflows"),
+        ],
+    ),
+    Clarification(
+        question="How should the results be grouped?",
+        options=[
+            ClarificationOption(label="By month", value="Group by month"),
+            ClarificationOption(label="By quarter", value="Group by quarter"),
+            ClarificationOption(label="By year", value="Group by year"),
+        ],
+    ),
+    Clarification(
+        question="By revenue, do you mean gross revenue or net revenue?",
+        options=[
+            ClarificationOption(label="Gross revenue", value="Gross revenue"),
+            ClarificationOption(
+                label="Net revenue", value="Net revenue after refunds and discounts"
+            ),
+        ],
+    ),
+    Clarification(
+        question="Should the analysis include all business units or only some?",
+        options=[
+            ClarificationOption(label="All business units", value="All business units"),
+            ClarificationOption(label="North only", value="Only the North business unit"),
+            ClarificationOption(label="South only", value="Only the South business unit"),
+        ],
+    ),
+    Clarification(
+        question="Should I compare against a previous period?",
+        options=[
+            ClarificationOption(label="Previous year", value="Compare with the previous year"),
+            ClarificationOption(label="Previous quarter", value="Compare with the previous quarter"),
+            ClarificationOption(label="No comparison", value="No comparison"),
+        ],
+    ),
+    # Free-form: no suggested answers, so the user types a reply.
+    Clarification(
+        question="Which date range should I use? For example, 'March 1 to May 31, 2026'.",
+    ),
+    Clarification(
+        question="Which customer or vendor should this analysis focus on?",
+    ),
+    Clarification(
+        question="What threshold counts as a large transaction for this report?",
+    ),
+    Clarification(
+        question="Can you describe the decision this analysis should support?",
+    ),
+]
+
 
 @router.get("/api/health")
 def health_check() -> dict[str, str]:
@@ -36,9 +106,25 @@ def health_check() -> dict[str, str]:
 @router.post("/api/chat", response_model=ChatResponse)
 def chat(request: ChatRequest) -> ChatResponse:
     message = request.message
+    ids = {
+        "conversation_id": request.conversation_id or f"conv_{uuid4().hex}",
+        "message_id": f"msg_{uuid4().hex}",
+    }
+
+    # Mock: stateless, so a clarification answer is not yet resumed server-side.
+    if random.random() < 0.8:
+        clarification = random.choice(CLARIFICATIONS)
+        return ChatResponse(
+            **ids,
+            status="clarification_needed",
+            response=clarification.question,
+            clarification=clarification,
+        )
+
     if re.search(r"\bpie[\s-]+(?:graph|chart)\b", message, re.IGNORECASE):
         segments = ["North", "South", "East", "West"]
         return ChatResponse(
+            **ids,
             response="Here's a randomly generated revenue breakdown by region.",
             chart=PieChartSpec(
                 title="Revenue by Region",
@@ -52,6 +138,7 @@ def chat(request: ChatRequest) -> ChatResponse:
     if re.search(r"\bbar[\s-]+(?:graph|chart)\b", message, re.IGNORECASE):
         regions = ["North", "South", "East", "West"]
         return ChatResponse(
+            **ids,
             response="Here's a randomly generated revenue comparison by region.",
             chart=BarChartSpec(
                 title="Revenue by Region",
@@ -70,6 +157,7 @@ def chat(request: ChatRequest) -> ChatResponse:
             for _ in range(2)
         ]
         return ChatResponse(
+            **ids,
             response="Here's a randomly generated monthly revenue comparison.",
             chart=LineChartSpec(
                 title="Monthly Revenue",
@@ -80,4 +168,4 @@ def chat(request: ChatRequest) -> ChatResponse:
             ),
         )
 
-    return ChatResponse(response=random.choice(REPLIES))
+    return ChatResponse(**ids, response=random.choice(REPLIES))
