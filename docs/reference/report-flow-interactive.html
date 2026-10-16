@@ -1,0 +1,3476 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="An interactive, standalone walkthrough of the proposed GenLedge report workflow. All activity and data are simulated."
+    />
+    <title>Report workflow · GenLedge</title>
+    <style>
+      :root {
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        color: #182230;
+        background: #f7f9fb;
+        font-synthesis: none;
+        -webkit-font-smoothing: antialiased;
+        --teal: #078b81;
+        --teal-dark: #08776f;
+        --ink: #182230;
+        --muted: #667085;
+        --line: #e8edf1;
+        --page: #f7f9fb;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-width: 320px;
+      }
+      button,
+      input,
+      textarea,
+      select {
+        font: inherit;
+      }
+      button {
+        cursor: pointer;
+      }
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.45;
+      }
+      button,
+      a,
+      input,
+      textarea,
+      select,
+      summary {
+        -webkit-tap-highlight-color: transparent;
+      }
+      :focus-visible {
+        outline: 3px solid #5cc7bc;
+        outline-offset: 3px;
+      }
+      h1,
+      h2,
+      h3,
+      h4,
+      p {
+        margin: 0;
+      }
+      button,
+      a {
+        touch-action: manipulation;
+      }
+      svg {
+        flex-shrink: 0;
+        vertical-align: middle;
+      }
+      .topbar {
+        height: 58px;
+        background: #fff;
+        border-bottom: 1px solid var(--line);
+      }
+      .topbar-inner {
+        width: min(100% - 48px, 1200px);
+        height: 100%;
+        margin: auto;
+        display: flex;
+        align-items: center;
+        gap: 24px;
+      }
+      .brand {
+        position: relative;
+        color: #00a594;
+        font-size: 17px;
+        font-weight: 700;
+        letter-spacing: -1px;
+        text-decoration: none;
+      }
+      .brand span {
+        font-weight: 500;
+      }
+      .brand sup {
+        position: absolute;
+        top: -2px;
+        right: -10px;
+        font-size: 11px;
+      }
+      .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border-left: 1px solid var(--line);
+        padding-left: 24px;
+        color: #8a96a5;
+        font-size: 12px;
+      }
+      .breadcrumb strong {
+        color: #344054;
+        font-weight: 600;
+      }
+      .offline {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        color: #667085;
+        font-size: 11px;
+      }
+      .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #d59c21;
+        display: inline-block;
+      }
+      main {
+        width: min(100% - 48px, 1200px);
+        margin: auto;
+        padding: 36px 0 48px;
+      }
+      .page-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        margin-bottom: 24px;
+      }
+      .eyebrow {
+        color: var(--teal-dark);
+        font-size: 10px;
+        font-weight: 750;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        margin-bottom: 7px;
+      }
+      h1 {
+        font-size: 27px;
+        font-weight: 650;
+        letter-spacing: -0.7px;
+      }
+      .subtitle {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.7;
+        margin-top: 7px;
+      }
+      .btn {
+        min-height: 38px;
+        border: 1px solid #dce3e9;
+        border-radius: 7px;
+        background: #fff;
+        color: #344054;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        padding: 8px 14px;
+        font-size: 12px;
+        line-height: 1.5;
+        font-weight: 600;
+        text-decoration: none;
+        transition:
+          background 0.15s,
+          border-color 0.15s;
+      }
+      .btn:hover:not(:disabled) {
+        background: #f4f8f7;
+        border-color: #9ad6cf;
+      }
+      .btn.primary {
+        background: var(--teal);
+        border-color: var(--teal);
+        color: #fff;
+      }
+      .btn.primary:hover:not(:disabled) {
+        background: var(--teal-dark);
+      }
+      .btn.danger {
+        color: #b42318;
+        border-color: #f3c7c2;
+      }
+      .btn.text {
+        background: transparent;
+        border-color: transparent;
+        color: var(--muted);
+        padding-left: 0;
+      }
+      .btn.small {
+        min-height: 32px;
+        padding: 5px 10px;
+        font-size: 11px;
+      }
+      .walkthrough-note {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        padding: 13px 18px;
+        border: 1px solid #dcebe7;
+        background: #f0f8f6;
+        border-radius: 9px;
+        margin-bottom: 22px;
+        color: #46665f;
+        font-size: 12px;
+        line-height: 1.6;
+      }
+      .walkthrough-note strong {
+        color: #23584f;
+      }
+      .walkthrough-note span {
+        flex-shrink: 0;
+        color: #56766f;
+        font-size: 11px;
+      }
+      .workspace {
+        display: grid;
+        grid-template-columns: 225px minmax(0, 1fr);
+        gap: 22px;
+        align-items: start;
+      }
+      .sidebar {
+        position: sticky;
+        top: 22px;
+      }
+      .steps {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 17px 10px 10px;
+      }
+      .rail-title {
+        padding: 0 12px 12px;
+        color: #8590a0;
+        font-size: 10px;
+        letter-spacing: 0.09em;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+      .step {
+        width: 100%;
+        border: 0;
+        background: transparent;
+        padding: 12px 10px;
+        border-radius: 7px;
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        text-align: left;
+        color: #7c8898;
+      }
+      .step + .step {
+        margin-top: 3px;
+      }
+      .step.active {
+        background: #edf8f5;
+        color: var(--teal-dark);
+      }
+      .step.done {
+        color: #344054;
+      }
+      .step:disabled {
+        opacity: 0.6;
+      }
+      .step-number {
+        width: 27px;
+        height: 27px;
+        border: 1px solid #e1e6ea;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        font-size: 11px;
+        font-weight: 650;
+        flex-shrink: 0;
+        background: #fff;
+      }
+      .step.active .step-number {
+        color: #fff;
+        background: var(--teal);
+        border-color: var(--teal);
+      }
+      .step.done .step-number {
+        color: var(--teal);
+        background: #f0f9f6;
+        border-color: #cce8de;
+      }
+      .step-name {
+        display: block;
+        font-size: 12px;
+        font-weight: 650;
+      }
+      .step-role {
+        display: block;
+        margin-top: 3px;
+        color: #8590a0;
+        font-size: 10px;
+      }
+      .sidebar-note {
+        margin: 17px 12px 0;
+        color: #7a8796;
+        font-size: 11px;
+        line-height: 1.7;
+      }
+      .sidebar-note strong {
+        color: #526270;
+        display: block;
+        margin-bottom: 4px;
+        font-weight: 600;
+      }
+      .stage {
+        min-width: 0;
+      }
+      .stage-shell {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      .stage-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 22px 26px;
+        border-bottom: 1px solid var(--line);
+      }
+      .stage-header h2 {
+        font-size: 17px;
+        font-weight: 650;
+        letter-spacing: -0.3px;
+      }
+      .stage-header p {
+        color: #7a8796;
+        font-size: 11px;
+        margin-top: 6px;
+        line-height: 1.6;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 9px;
+        border-radius: 999px;
+        background: #f2f4f7;
+        color: #667085;
+        font-size: 10px;
+        line-height: 1.4;
+        font-weight: 650;
+        white-space: nowrap;
+      }
+      .badge.teal {
+        background: #edf8f5;
+        color: #087f61;
+      }
+      .badge.amber {
+        background: #fff7e5;
+        color: #946200;
+      }
+      .badge.red {
+        background: #fef0ee;
+        color: #b42318;
+      }
+      .badge.blue {
+        background: #eef4fc;
+        color: #3f68a5;
+      }
+      .stage-body {
+        padding: 26px;
+        min-height: 400px;
+      }
+      .stage-footer {
+        border-top: 1px solid var(--line);
+        padding: 16px 26px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+      }
+      .footer-caption {
+        color: #8590a0;
+        font-size: 11px;
+      }
+      .explanation {
+        display: flex;
+        align-items: flex-start;
+        gap: 11px;
+        padding: 17px 4px;
+        color: #667085;
+        font-size: 12px;
+        line-height: 1.75;
+      }
+      .explanation svg {
+        color: var(--teal);
+        margin-top: 2px;
+      }
+      .explanation strong {
+        color: #344054;
+        font-weight: 600;
+      }
+      .assistant-label {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        color: #087f76;
+        font-size: 11px;
+        font-weight: 600;
+        margin-bottom: 10px;
+      }
+      .assistant-label .dot {
+        background: #10a99a;
+      }
+      .conversation {
+        background: var(--page);
+        border: 1px solid var(--line);
+        padding: 23px;
+        border-radius: 9px;
+      }
+      .conversation p {
+        font-size: 13px;
+        line-height: 1.8;
+        color: #475467;
+      }
+      .request-bubble {
+        background: #eef8f6;
+        border: 1px solid #d9ebe8;
+        border-radius: 12px 12px 3px 12px;
+        padding: 16px;
+        margin: 22px 0 20px 28px;
+      }
+      .request-bubble label {
+        display: block;
+        font-size: 10px;
+        color: #588078;
+        margin-bottom: 6px;
+        font-weight: 650;
+      }
+      textarea,
+      input,
+      select {
+        width: 100%;
+        border: 1px solid #d9e1e7;
+        border-radius: 7px;
+        background: #fff;
+        padding: 10px 12px;
+        color: #344054;
+        font-size: 12px;
+        line-height: 1.6;
+      }
+      textarea {
+        resize: vertical;
+        min-height: 82px;
+      }
+      .request-bubble textarea {
+        border: 0;
+        background: transparent;
+        padding: 0;
+        min-height: 76px;
+        color: #203d3a;
+        font-size: 14px;
+      }
+      .request-bubble textarea:focus-visible {
+        outline-offset: 6px;
+      }
+      .caption {
+        font-size: 11px;
+        color: #8590a0;
+        line-height: 1.7;
+      }
+      .label {
+        display: block;
+        font-size: 11px;
+        font-weight: 600;
+        color: #475467;
+        margin-bottom: 7px;
+      }
+      .section-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+      .section-title h3 {
+        font-size: 13px;
+        font-weight: 650;
+      }
+      .section-title span {
+        color: #8590a0;
+        font-size: 10px;
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 22px;
+      }
+      .stat {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 14px 16px;
+        background: #fff;
+      }
+      .stat span {
+        display: block;
+        color: #7a8796;
+        font-size: 10px;
+        margin-bottom: 7px;
+      }
+      .stat strong {
+        font-size: 21px;
+        font-weight: 600;
+        letter-spacing: -0.6px;
+      }
+      .stat strong.teal {
+        color: var(--teal-dark);
+      }
+      .catalog {
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        overflow: hidden;
+      }
+      .catalog details + details {
+        border-top: 1px solid var(--line);
+      }
+      .catalog summary {
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        list-style: none;
+      }
+      .catalog summary::-webkit-details-marker {
+        display: none;
+      }
+      .catalog summary .chevron {
+        margin-left: auto;
+        color: #98a2b3;
+      }
+      .catalog details[open] .chevron {
+        transform: rotate(90deg);
+      }
+      .catalog .table-wrap {
+        padding: 0 16px 13px;
+        overflow-x: auto;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 11px;
+      }
+      th {
+        text-align: left;
+        padding: 10px 12px;
+        background: #f8fafb;
+        color: #8590a0;
+        font-weight: 600;
+        border-bottom: 1px solid var(--line);
+        white-space: nowrap;
+      }
+      td {
+        padding: 11px 12px;
+        border-bottom: 1px solid #f0f3f5;
+        color: #475467;
+        line-height: 1.6;
+      }
+      tbody tr:last-child td {
+        border-bottom: 0;
+      }
+      .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 11px;
+      }
+      .notice {
+        display: flex;
+        gap: 9px;
+        border: 1px solid #d9ebe5;
+        background: #f1faf6;
+        padding: 13px 15px;
+        border-radius: 8px;
+        color: #427163;
+        font-size: 11px;
+        line-height: 1.7;
+        margin-top: 18px;
+      }
+      .notice svg {
+        margin-top: 2px;
+      }
+      .notice.amber {
+        border-color: #f1dfb7;
+        background: #fffbf1;
+        color: #92681d;
+      }
+      .notice.red {
+        border-color: #f1d3cd;
+        background: #fff7f5;
+        color: #a34c3f;
+      }
+      .tabs {
+        display: flex;
+        gap: 22px;
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 20px;
+        overflow-x: auto;
+      }
+      .tab {
+        border: 0;
+        background: transparent;
+        color: #7a8796;
+        padding: 0 1px 12px;
+        font-size: 12px;
+        font-weight: 550;
+        white-space: nowrap;
+      }
+      .tab.active {
+        border-bottom: 2px solid var(--teal);
+        color: var(--teal-dark);
+        font-weight: 650;
+      }
+      .source-card {
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        padding: 17px;
+      }
+      .source-card header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+        font-size: 12px;
+        font-weight: 650;
+      }
+      .source-card p {
+        font-size: 12px;
+        line-height: 1.8;
+        color: #667085;
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+        margin: 13px 0;
+      }
+      .chip {
+        border: 1px solid #dce9e5;
+        border-radius: 5px;
+        padding: 4px 8px;
+        color: #3d7065;
+        background: #f4faf8;
+        font-size: 10px;
+      }
+      .transform-list {
+        padding: 0;
+        margin: 0;
+        list-style: none;
+      }
+      .transform-list li {
+        display: flex;
+        gap: 12px;
+        padding: 14px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .transform-list li:last-child {
+        border-bottom: 0;
+      }
+      .transform-number {
+        width: 24px;
+        height: 24px;
+        background: #f0f6f4;
+        color: #4f8173;
+        border-radius: 6px;
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+        font-size: 10px;
+      }
+      .transform-list strong {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 5px;
+      }
+      .transform-list p {
+        font-size: 11px;
+        color: #7a8796;
+        line-height: 1.7;
+      }
+      pre {
+        padding: 18px;
+        border: 1px solid #e1e9ec;
+        border-radius: 8px;
+        background: #f8fafb;
+        color: #3c5968;
+        line-height: 1.9;
+        overflow: auto;
+        margin: 0;
+        font-size: 11px;
+        tab-size: 2;
+      }
+      .sql-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+      .mini-layout {
+        background: #fbfcfd;
+        border: 1px dashed #d8e3df;
+        border-radius: 9px;
+        padding: 20px;
+      }
+      .mini-layout h4 {
+        font-size: 12px;
+        margin-bottom: 18px;
+        font-weight: 600;
+      }
+      .empty-chart {
+        height: 120px;
+        border-left: 1px solid #dce4e6;
+        border-bottom: 1px solid #dce4e6;
+        display: grid;
+        place-items: center;
+        margin: 8px 12px 18px 23px;
+        color: #84948e;
+        font-size: 11px;
+        background: repeating-linear-gradient(
+          to top,
+          transparent,
+          transparent 39px,
+          #eef2f3 39px,
+          #eef2f3 40px
+        );
+      }
+      .empty-table {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        padding: 12px 0;
+      }
+      .empty-table span {
+        height: 7px;
+        background: #e9eeef;
+        border-radius: 3px;
+      }
+      .review-layout {
+        display: grid;
+        grid-template-columns: 176px minmax(0, 1fr);
+        gap: 18px;
+      }
+      .queue {
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        align-self: start;
+        overflow: hidden;
+      }
+      .queue-title {
+        padding: 13px 12px;
+        border-bottom: 1px solid var(--line);
+        font-size: 11px;
+        font-weight: 650;
+      }
+      .queue-item {
+        padding: 14px 12px;
+        border-left: 3px solid var(--teal);
+        background: #f1f9f6;
+      }
+      .queue-item strong {
+        display: block;
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1.6;
+        margin-bottom: 9px;
+      }
+      .queue-item p {
+        font-size: 10px;
+        margin-top: 9px;
+        color: #7a8796;
+      }
+      .review-detail {
+        min-width: 0;
+      }
+      .detail-title {
+        font-size: 15px;
+        font-weight: 650;
+        margin-bottom: 7px;
+      }
+      .check-list {
+        display: grid;
+        gap: 10px;
+        margin: 19px 0;
+      }
+      .check-list span {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        color: #526b61;
+        font-size: 11px;
+        line-height: 1.6;
+      }
+      .check-list svg {
+        color: var(--teal);
+      }
+      .definition-summary {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        margin: 18px 0;
+      }
+      .definition-summary div {
+        padding: 12px;
+      }
+      .definition-summary div:nth-child(odd) {
+        border-right: 1px solid var(--line);
+      }
+      .definition-summary div:nth-child(n + 3) {
+        border-top: 1px solid var(--line);
+      }
+      .definition-summary dt {
+        color: #8590a0;
+        font-size: 10px;
+        margin-bottom: 6px;
+      }
+      .definition-summary dd {
+        margin: 0;
+        font-size: 11px;
+        color: #475467;
+        line-height: 1.6;
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
+      .feedback {
+        border-top: 1px solid var(--line);
+        padding-top: 18px;
+        margin-top: 20px;
+      }
+      .feedback select {
+        margin-bottom: 10px;
+      }
+      .feedback textarea {
+        margin-bottom: 10px;
+      }
+      .history {
+        margin-top: 20px;
+      }
+      .history summary {
+        color: #667085;
+        font-size: 11px;
+        cursor: pointer;
+        padding-bottom: 10px;
+      }
+      .history-row {
+        border-left: 2px solid #e2eae7;
+        padding: 4px 0 14px 13px;
+        margin-left: 4px;
+      }
+      .history-row strong {
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .history-row p {
+        color: #8590a0;
+        font-size: 10px;
+        line-height: 1.7;
+        margin-top: 4px;
+        overflow-wrap: anywhere;
+      }
+      .editor {
+        border: 1px solid #cde5dd;
+        background: #f8fcfa;
+        padding: 16px;
+        border-radius: 8px;
+        margin-top: 16px;
+      }
+      .editor .field + .field {
+        margin-top: 13px;
+      }
+      .editor .actions {
+        margin-top: 16px;
+      }
+      .checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #475467;
+        font-size: 12px;
+      }
+      input[type="checkbox"] {
+        width: 15px;
+        height: 15px;
+        accent-color: var(--teal);
+      }
+      .saved-heading {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 23px;
+      }
+      .success-icon {
+        width: 43px;
+        height: 43px;
+        display: grid;
+        place-items: center;
+        border: 1px solid #cce8dc;
+        border-radius: 50%;
+        background: #edf8f3;
+        color: var(--teal);
+      }
+      .saved-heading h3 {
+        font-size: 16px;
+        font-weight: 600;
+      }
+      .saved-heading p {
+        color: #7a8796;
+        font-size: 11px;
+        margin-top: 5px;
+      }
+      .recipe {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        overflow: hidden;
+        margin: 20px 0;
+      }
+      .recipe > div {
+        padding: 18px;
+      }
+      .recipe > div + div {
+        border-left: 1px solid var(--line);
+        background: #fafbfc;
+      }
+      .recipe h4 {
+        font-size: 12px;
+        margin-bottom: 12px;
+      }
+      .recipe ul {
+        margin: 0;
+        padding-left: 16px;
+        color: #667085;
+        font-size: 11px;
+        line-height: 2;
+      }
+      .recipe .not-saved {
+        color: #8590a0;
+      }
+      .inspect-json {
+        margin-top: 18px;
+      }
+      .inspect-json summary {
+        color: var(--teal-dark);
+        font-size: 11px;
+        cursor: pointer;
+        margin-bottom: 10px;
+      }
+      .parameters {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin: 22px 0;
+      }
+      .run-route {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 12px;
+        gap: 10px;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        margin: 20px 0;
+      }
+      .route-node {
+        text-align: center;
+        font-size: 11px;
+        line-height: 1.6;
+        flex: 1;
+      }
+      .route-node .node-icon {
+        width: 37px;
+        height: 37px;
+        display: grid;
+        place-items: center;
+        background: #f0f7f5;
+        color: var(--teal-dark);
+        border-radius: 9px;
+        margin: 0 auto 9px;
+      }
+      .route-node span {
+        display: block;
+        color: #98a2b3;
+        font-size: 10px;
+      }
+      .run-route > svg {
+        color: #adb9c3;
+      }
+      .report-heading {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .report-heading h3 {
+        font-size: 17px;
+        font-weight: 650;
+        letter-spacing: -0.3px;
+      }
+      .report-heading p {
+        font-size: 11px;
+        color: #8590a0;
+        line-height: 1.7;
+        margin-top: 6px;
+      }
+      .metric-value {
+        font-variant-numeric: tabular-nums;
+      }
+      .report-chart {
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        padding: 18px;
+        margin-bottom: 18px;
+      }
+      .report-chart h4 {
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 9px;
+      }
+      .chart-svg {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+      .legend {
+        display: flex;
+        gap: 16px;
+        justify-content: center;
+        font-size: 10px;
+        color: #667085;
+      }
+      .legend i {
+        width: 7px;
+        height: 7px;
+        display: inline-block;
+        border-radius: 2px;
+        margin-right: 5px;
+      }
+      .result-table {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: auto;
+        margin-bottom: 18px;
+      }
+      .result-table td:not(:first-child),
+      .result-table th:not(:first-child) {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .run-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding-top: 15px;
+        margin-top: 18px;
+        border-top: 1px solid var(--line);
+        color: #8590a0;
+        font-size: 10px;
+      }
+      .source-update {
+        margin-top: 18px;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        background: #fafcfc;
+      }
+      .source-update h4 {
+        font-size: 12px;
+        margin-bottom: 6px;
+      }
+      .source-update p {
+        font-size: 11px;
+        line-height: 1.7;
+        color: #7a8796;
+        margin-bottom: 12px;
+      }
+      .field-error {
+        font-size: 11px;
+        color: #b42318;
+        margin-top: 7px;
+        line-height: 1.6;
+      }
+      .clarifications {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-top: 22px;
+      }
+      .clarifications .wide {
+        grid-column: 1 / -1;
+      }
+      .handoff {
+        padding: 24px 0;
+      }
+      .handoff h3 {
+        font-size: 19px;
+        font-weight: 600;
+        margin: 18px 0 9px;
+        letter-spacing: -0.4px;
+      }
+      .handoff p {
+        color: #7a8796;
+        font-size: 12px;
+        line-height: 1.8;
+      }
+      .request-summary {
+        border-top: 1px solid var(--line);
+        margin-top: 24px;
+        padding-top: 20px;
+      }
+      .request-summary > p {
+        color: #475467;
+        font-size: 13px;
+        margin-bottom: 12px;
+        line-height: 1.8;
+      }
+      .request-summary .chips {
+        margin-bottom: 0;
+      }
+      .review-detail .tabs {
+        margin-top: 22px;
+        gap: 17px;
+      }
+      .review-decision {
+        border-top: 1px solid var(--line);
+        margin-top: 22px;
+        padding-top: 18px;
+      }
+      .review-status {
+        font-size: 12px;
+        color: #667085;
+        line-height: 1.7;
+        margin-bottom: 14px;
+      }
+      .review-status strong {
+        color: #344054;
+        font-weight: 600;
+      }
+      .update-message {
+        margin-bottom: 14px;
+        color: #4c7768;
+        font-size: 11px;
+        line-height: 1.7;
+      }
+      .stats.single {
+        grid-template-columns: minmax(0, 220px);
+      }
+      .steps {
+        padding: 10px;
+      }
+      .flow-group {
+        padding: 7px 4px;
+        border-left: 2px solid #cce8e0;
+      }
+      .flow-group.engineer {
+        border-color: #b6cceb;
+        background: #f7faff;
+        border-radius: 0 6px 6px 0;
+      }
+      .group-title {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 5px 9px 9px;
+        color: #397769;
+        font-size: 10px;
+        font-weight: 700;
+      }
+      .engineer .group-title {
+        color: #4f70a6;
+      }
+      .group-title span {
+        margin-left: auto;
+        color: #98a2b3;
+        font-size: 9px;
+        font-weight: 500;
+      }
+      .role-switch {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 14px 10px;
+        color: #8a96a5;
+        font-size: 9px;
+      }
+      .role-switch::before {
+        content: "↓";
+        font-size: 14px;
+        color: #a4b2bf;
+      }
+      .engineer .step.active {
+        background: #eaf1fc;
+        color: #3f68a5;
+      }
+      .engineer .step.active .step-number {
+        background: #547cb5;
+        border-color: #547cb5;
+      }
+      .stage-shell.engineer {
+        border-top: 3px solid #8aabd6;
+      }
+      .chat-reply {
+        margin-top: 20px;
+      }
+      .chat-reply textarea {
+        min-height: 86px;
+      }
+      .definition-editor {
+        min-height: 196px;
+        line-height: 1.85;
+        background: #fbfcfd;
+      }
+      .definition-editor.code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 11px;
+        tab-size: 2;
+      }
+      .definition-editor.sql {
+        min-height: 288px;
+      }
+      .proposal-field + .proposal-field {
+        margin-top: 16px;
+      }
+      .edit-actions {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        flex-wrap: wrap;
+        margin-top: 15px;
+      }
+      .edit-actions[hidden] {
+        display: none;
+      }
+      .edit-actions .caption {
+        margin-right: auto;
+      }
+      .review-detail > .title-input {
+        width: 100%;
+        border-color: transparent;
+        background: transparent;
+        padding: 4px 0;
+        font-size: 15px;
+        font-weight: 650;
+      }
+      .review-detail > .title-input:hover,
+      .review-detail > .title-input:focus {
+        border-color: #d9e1e7;
+        padding-left: 9px;
+      }
+      .review-feedback {
+        margin-top: 20px;
+      }
+      .review-feedback textarea {
+        min-height: 85px;
+      }
+      .review-feedback .actions {
+        margin-top: 12px;
+      }
+      .run-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 9px;
+        margin-bottom: 20px;
+      }
+      .run-filters select {
+        width: auto;
+        max-width: 100%;
+        font-size: 11px;
+        padding: 7px 10px;
+      }
+      .review-layout.has-lineage {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .has-lineage .queue {
+        display: none;
+      }
+      .lineage-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+      .view-picker {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .view-choice {
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+        padding: 7px 10px;
+        background: #fff;
+        color: #7a8796;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        font-size: 11px;
+      }
+      .view-choice.active {
+        background: #f0f8f5;
+        border-color: #b9ddd2;
+        color: var(--teal-dark);
+      }
+      .lineage-options {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .lineage-options label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 10px;
+        color: #7a8796;
+      }
+      .lineage-options input {
+        width: 12px;
+        height: 12px;
+      }
+      .schema-viewport {
+        overflow: auto;
+        border: 1px solid #e3e9ed;
+        border-radius: 9px;
+        background: #fbfcfd;
+      }
+      .schema-canvas {
+        position: relative;
+        min-width: 820px;
+        width: 100%;
+        height: 480px;
+        background-image: radial-gradient(#dfe6eb 0.7px, transparent 0.7px);
+        background-size: 18px 18px;
+      }
+      .schema-canvas svg.connections {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 820px;
+        height: 480px;
+        pointer-events: none;
+      }
+      .schema-heading {
+        position: absolute;
+        top: 22px;
+        font-size: 9px;
+        font-weight: 650;
+        color: #94a1af;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .schema-node {
+        position: absolute;
+        background: #fff;
+        border: 1px solid #dfe7eb;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgb(27 50 58 / 4%);
+      }
+      .schema-node.related {
+        border-style: dashed;
+        box-shadow: none;
+      }
+      .schema-node header {
+        height: 36px;
+        border-bottom: 1px solid #edf0f3;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 0 12px;
+        background: #f8fafb;
+        border-radius: 8px 8px 0 0;
+      }
+      .schema-node header button {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: #344054;
+        min-width: 0;
+        font-size: 10px;
+        font-weight: 650;
+      }
+      .schema-node header button:hover {
+        color: var(--teal-dark);
+      }
+      .schema-node header .node-kind {
+        margin-left: auto;
+        font-size: 8px;
+        color: #9aa6b2;
+      }
+      .schema-row {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 9px;
+        width: 100%;
+        height: 32px;
+        border: 0;
+        padding: 0 12px;
+        background: #fff;
+        color: #526270;
+        text-align: left;
+        font-size: 10px;
+      }
+      .schema-row:last-child {
+        border-radius: 0 0 8px 8px;
+      }
+      .schema-row:hover {
+        background: #f5faf8;
+      }
+      .schema-row.selected {
+        background: #eaf7f1;
+        color: #087f6d;
+      }
+      .schema-row.muted {
+        opacity: 0.46;
+      }
+      .schema-row .field-type {
+        font-family: inherit;
+        color: #9aa6b2;
+        font-size: 9px;
+      }
+      .schema-row .port {
+        position: absolute;
+        right: -4px;
+        top: calc(50% - 3px);
+        width: 6px;
+        height: 6px;
+        border: 1px solid #fff;
+        background: #9cc6b8;
+        border-radius: 50%;
+      }
+      .schema-row .port.left {
+        right: auto;
+        left: -4px;
+      }
+      .schema-row.output {
+        display: block;
+        height: 54px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+      }
+      .schema-row.output strong {
+        display: block;
+        font-size: 10px;
+        font-weight: 550;
+        line-height: 1.5;
+      }
+      .schema-row.output small {
+        display: block;
+        color: #8a99a6;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 8px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        line-height: 1.8;
+      }
+      .query-filter {
+        height: 68px;
+        border-top: 1px solid #edf0f3;
+        padding: 10px 12px;
+        font-size: 9px;
+        line-height: 1.8;
+        color: #8a99a6;
+      }
+      .query-filter.selected {
+        background: #f0f8f5;
+        color: #357461;
+      }
+      .query-filter strong {
+        display: block;
+        font-weight: 550;
+        color: #687b88;
+      }
+      .query-filter code {
+        font-size: 8px;
+      }
+      .schema-node.query-node {
+        border-color: #badbce;
+      }
+      .schema-node.query-node header {
+        background: #f1f8f5;
+      }
+      .graph-placeholder {
+        height: 96px;
+        border-bottom: 1px solid #edf0f3;
+        padding: 15px 18px 8px;
+      }
+      .graph-placeholder svg {
+        width: 100%;
+        height: 55px;
+      }
+      .graph-placeholder p {
+        text-align: center;
+        font-size: 8px;
+        color: #9aa6b2;
+        margin-top: 3px;
+      }
+      .binding-row .binding-label {
+        color: #9aa6b2;
+        font-family: inherit;
+        font-size: 9px;
+      }
+      .lineage-detail {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 14px;
+        min-height: 45px;
+        border-bottom: 1px solid #edf0f3;
+        padding: 12px 0;
+      }
+      .lineage-detail p {
+        min-width: 0;
+        overflow-wrap: anywhere;
+        color: #667085;
+        font-size: 10px;
+        line-height: 1.8;
+      }
+      .lineage-detail code {
+        color: #427362;
+        font-size: 10px;
+      }
+      .lineage-detail button {
+        flex-shrink: 0;
+      }
+      .lineage-legend {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 15px;
+        color: #98a2b3;
+        font-size: 9px;
+        margin-top: 11px;
+      }
+      .lineage-legend span {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+      .lineage-legend i {
+        display: inline-block;
+        width: 17px;
+        border-top: 1.5px solid #81b8a3;
+      }
+      .lineage-legend i.dashed {
+        border-top: 1.5px dashed #b7c3cc;
+      }
+      .lineage-legend .sample-label {
+        margin-left: auto;
+      }
+      .lineage-unavailable {
+        padding: 36px 20px;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        color: #7a8796;
+        font-size: 12px;
+        line-height: 1.9;
+      }
+      .report-navigation {
+        gap: 24px;
+      }
+      .report-navigation .tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding-bottom: 13px;
+      }
+      .report-navigation .tab:first-child {
+        font-weight: 650;
+      }
+      .report-preview {
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        padding: 24px;
+        background: #f8fafb;
+      }
+      .report-preview-heading {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 15px;
+        margin-bottom: 22px;
+      }
+      .report-preview-heading h3 {
+        font-size: 17px;
+        font-weight: 650;
+        letter-spacing: -0.3px;
+      }
+      .report-preview-heading p {
+        margin-top: 6px;
+        color: #98a2b3;
+        font-size: 10px;
+      }
+      .preview-components {
+        display: grid;
+        gap: 17px;
+      }
+      .report-preview-component {
+        position: relative;
+        min-width: 0;
+        border: 1px solid #e1e8ec;
+        border-radius: 8px;
+        background: #fff;
+        padding: 19px;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
+      .report-preview-component:hover,
+      .report-preview-component:focus-within {
+        border-color: #88c6b7;
+        box-shadow: 0 0 0 2px rgb(7 139 129 / 5%);
+      }
+      .report-preview-component header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+      .report-preview-component h4 {
+        font-size: 12px;
+        color: #475467;
+        font-weight: 600;
+      }
+      .component-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--teal-dark);
+        font-size: 10px;
+      }
+      .component-hit-area {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        background: transparent;
+        border: 0;
+        border-radius: 8px;
+      }
+      .preview-chart {
+        display: block;
+        width: 100%;
+        height: 160px;
+      }
+      .preview-legend {
+        display: flex;
+        gap: 14px;
+        justify-content: center;
+        margin-top: 9px;
+        color: #98a2b3;
+        font-size: 9px;
+      }
+      .preview-legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .preview-legend i {
+        width: 7px;
+        height: 7px;
+        background: #a9cebe;
+        border-radius: 2px;
+      }
+      .preview-note {
+        margin-top: 14px;
+        font-size: 10px;
+        color: #98a2b3;
+      }
+      .preview-table {
+        overflow: auto;
+      }
+      .preview-table td {
+        color: #a4afb9;
+      }
+      .editor-drawer {
+        position: fixed;
+        inset: 0 0 0 auto;
+        margin: 0;
+        width: min(620px, 100%);
+        max-width: 100%;
+        height: 100dvh;
+        max-height: 100dvh;
+        padding: 0;
+        border: 0;
+        border-left: 1px solid #dce5e9;
+        background: #fff;
+        color: var(--ink);
+        box-shadow: -12px 0 40px rgb(24 34 48 / 10%);
+      }
+      .editor-drawer::backdrop {
+        background: rgb(24 34 48 / 25%);
+      }
+      .editor-drawer[open] {
+        display: flex;
+        flex-direction: column;
+      }
+      .drawer-header {
+        position: sticky;
+        top: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 15px;
+        padding: 23px 25px;
+        background: #fff;
+        border-bottom: 1px solid var(--line);
+        z-index: 1;
+      }
+      .drawer-header h3 {
+        font-size: 16px;
+        font-weight: 650;
+      }
+      .drawer-header p {
+        font-size: 11px;
+        color: #8590a0;
+        margin-top: 6px;
+      }
+      .drawer-close {
+        display: grid;
+        place-items: center;
+        width: 30px;
+        height: 30px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #fff;
+        color: #718096;
+        font-size: 19px;
+      }
+      .drawer-body {
+        flex: 1;
+        min-height: 0;
+        overflow: auto;
+        padding: 24px 25px;
+      }
+      .drawer-body .definition-editor {
+        min-height: 230px;
+      }
+      .drawer-body .definition-editor.sql {
+        min-height: 310px;
+      }
+      .drawer-section {
+        margin-top: 22px;
+        border-top: 1px solid var(--line);
+        padding-top: 17px;
+      }
+      .drawer-section summary {
+        cursor: pointer;
+        color: #667085;
+        font-size: 12px;
+        margin-bottom: 13px;
+      }
+      .drawer-footer {
+        flex-shrink: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        padding: 16px 25px;
+        background: #fff;
+        border-top: 1px solid var(--line);
+      }
+      .feedback-modal {
+        width: min(480px, calc(100% - 36px));
+        max-width: calc(100% - 36px);
+        max-height: calc(100dvh - 36px);
+        padding: 0;
+        border: 1px solid #dfe7eb;
+        border-radius: 12px;
+        background: #fff;
+        color: var(--ink);
+        box-shadow: 0 18px 60px rgb(24 34 48 / 16%);
+      }
+      .feedback-modal::backdrop {
+        background: rgb(24 34 48 / 28%);
+      }
+      .feedback-modal .drawer-header {
+        position: static;
+        padding: 20px 22px;
+      }
+      .feedback-modal .modal-body {
+        padding: 20px 22px;
+      }
+      .feedback-modal textarea {
+        min-height: 132px;
+      }
+      .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        padding: 0 22px 20px;
+      }
+      @media (max-width: 720px) {
+        .report-preview {
+          padding: 15px;
+        }
+        .report-preview-component {
+          padding: 14px;
+        }
+        .preview-chart {
+          height: 140px;
+        }
+        .component-link {
+          font-size: 9px;
+        }
+        .drawer-body {
+          padding: 18px;
+        }
+        .drawer-header {
+          padding: 18px;
+        }
+        .drawer-footer {
+          padding: 14px 18px;
+        }
+      }
+      .flash {
+        border: 1px solid #c9e4d8;
+        background: #f0faf4;
+        color: #36745b;
+        padding: 11px 15px;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        font-size: 11px;
+        line-height: 1.7;
+      }
+      .bottom-note {
+        margin: 12px 0 0;
+        text-align: center;
+        font-size: 10px;
+        color: #98a2b3;
+        line-height: 1.7;
+      }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+      @media (max-width: 1000px) {
+        .workspace {
+          grid-template-columns: 196px minmax(0, 1fr);
+          gap: 16px;
+        }
+        .review-layout {
+          grid-template-columns: 1fr;
+        }
+        .queue {
+          display: none;
+        }
+        .stage-body {
+          padding: 22px;
+        }
+      }
+      @media (max-width: 720px) {
+        main,
+        .topbar-inner {
+          width: calc(100% - 32px);
+        }
+        main {
+          padding-top: 25px;
+        }
+        .breadcrumb {
+          gap: 8px;
+          padding-left: 17px;
+        }
+        .breadcrumb {
+          display: none;
+        }
+        .offline {
+          font-size: 10px;
+        }
+        .page-heading {
+          align-items: flex-start;
+          gap: 12px;
+        }
+        h1 {
+          font-size: 23px;
+        }
+        .page-heading .btn {
+          min-width: 36px;
+          padding: 8px;
+        }
+        .page-heading .btn span {
+          display: none;
+        }
+        .walkthrough-note {
+          align-items: flex-start;
+          font-size: 11px;
+          padding: 12px 14px;
+        }
+        .walkthrough-note > span {
+          display: none;
+        }
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+        .sidebar {
+          position: static;
+          min-width: 0;
+        }
+        .steps {
+          display: flex;
+          overflow-x: auto;
+          padding: 8px;
+          gap: 6px;
+        }
+        .rail-title {
+          display: none;
+        }
+        .step {
+          flex: 0 0 auto;
+          width: auto;
+          padding: 8px;
+          gap: 7px;
+        }
+        .step + .step {
+          margin-top: 0;
+        }
+        .step-role,
+        .sidebar-note {
+          display: none;
+        }
+        .flow-group {
+          flex: 0 0 auto;
+          padding: 4px;
+        }
+        .group-title {
+          padding: 3px 7px 7px;
+          font-size: 10px;
+        }
+        .group-steps {
+          display: flex;
+          gap: 3px;
+        }
+        .role-switch {
+          flex: 0 0 65px;
+          padding: 4px 7px;
+          font-size: 9px;
+          align-self: center;
+          line-height: 1.6;
+        }
+        .role-switch::before {
+          content: "→";
+        }
+        .group-title span {
+          margin-left: 18px;
+        }
+        .step-name {
+          font-size: 10px;
+        }
+        .step-number {
+          width: 22px;
+          height: 22px;
+          font-size: 10px;
+        }
+        .stage-header {
+          padding: 18px;
+          align-items: flex-start;
+        }
+        .stage-body {
+          padding: 18px;
+          min-height: 340px;
+        }
+        .stage-footer {
+          padding: 14px 18px;
+        }
+        .stage-footer .footer-caption {
+          display: none;
+        }
+        .stage-footer .btn {
+          font-size: 11px;
+          padding: 8px 10px;
+        }
+        .stage-header h2 {
+          font-size: 15px;
+        }
+        .conversation {
+          padding: 16px;
+        }
+        .request-bubble {
+          margin-left: 0;
+        }
+        .stats {
+          gap: 7px;
+        }
+        .stat {
+          padding: 12px 9px;
+        }
+        .stat strong {
+          font-size: 18px;
+        }
+        .stat span {
+          font-size: 9px;
+        }
+        .recipe,
+        .parameters {
+          grid-template-columns: 1fr;
+        }
+        .clarifications {
+          grid-template-columns: 1fr;
+        }
+        .recipe > div + div {
+          border-left: 0;
+          border-top: 1px solid var(--line);
+        }
+        .report-heading {
+          flex-direction: column;
+        }
+        .definition-summary {
+          grid-template-columns: 1fr;
+        }
+        .definition-summary div:nth-child(odd) {
+          border-right: 0;
+        }
+        .definition-summary div + div {
+          border-top: 1px solid var(--line);
+        }
+        .run-route {
+          padding: 16px 5px;
+          gap: 3px;
+        }
+        .route-node {
+          font-size: 10px;
+        }
+        .route-node span {
+          font-size: 9px;
+        }
+      }
+      @media (max-width: 480px) {
+        .stats,
+        .stats.single {
+          grid-template-columns: 1fr;
+          gap: 8px;
+        }
+        .stat {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          padding: 12px;
+        }
+        .stat span {
+          margin-bottom: 0;
+          font-size: 11px;
+        }
+        .stat strong {
+          font-size: 20px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          scroll-behavior: auto !important;
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a
+          class="brand"
+          href="#"
+          aria-label="GenLedge walkthrough home"
+          data-action="home"
+          >gen<span>ledge</span><sup aria-hidden="true">↗</sup></a
+        >
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+          <span class="workspace-label">Workspace &nbsp; ›</span
+          ><strong>Report workflow</strong>
+        </nav>
+        <span class="offline"
+          ><i class="dot" aria-hidden="true"></i> Prototype · simulated
+          data</span
+        >
+      </div>
+    </header>
+    <main>
+      <div class="page-heading">
+        <div>
+          <p class="eyebrow">GenLedge · walkthrough</p>
+          <h1>Report workflow</h1>
+        </div>
+        <button
+          class="btn"
+          data-action="reset"
+          aria-label="Restart walkthrough"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.7"
+            aria-hidden="true"
+          >
+            <path d="M3 10a9 9 0 1 1 2 8M3 4v6h6" /></svg
+          ><span>Restart</span>
+        </button>
+      </div>
+      <div class="workspace">
+        <aside class="sidebar">
+          <nav
+            class="steps"
+            id="steps"
+            aria-label="Report workflow steps"
+          ></nav>
+        </aside>
+        <div class="stage"><div id="screen"></div></div>
+      </div>
+      <div
+        id="announcement"
+        class="sr-only"
+        role="status"
+        aria-live="polite"
+      ></div>
+      <noscript
+        ><p>
+          This interactive walkthrough needs JavaScript enabled in your browser.
+        </p></noscript
+      >
+    </main>
+    <script>
+      "use strict";
+      const defaultRequest =
+        "I’d like a monthly report showing how cash is moving through the business.";
+      const defaultReply =
+        "Q3 2026 in USD. Net cash flow by month, with a chart and a monthly breakdown.";
+      const periodOptions = {
+        q3: ["Q3 2026 · July–September", "2026-07-01", "2026-10-01"],
+        "jul-aug": ["July–August 2026", "2026-07-01", "2026-09-01"],
+        sep: ["September 2026", "2026-09-01", "2026-10-01"],
+      };
+      const steps = [
+        "Request a report",
+        "Clarify the need",
+        "Await review",
+        "Review & revise",
+        "Report ready",
+        "View results",
+      ];
+      const paths = {
+        arrow: '<path d="M4 12h16m-6-6 6 6-6 6"/>',
+        back: '<path d="M20 12H4m6-6-6 6 6 6"/>',
+        check: '<path d="m5 12 4 4L19 6"/>',
+        file: '<path d="M14 3H5v18h14V8zM14 3v5h5M8 12h8m-8 4h6"/>',
+        database:
+          '<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 4 16 4 16 0V5M4 12c0 4 16 4 16 0"/>',
+        chart: '<path d="M4 3v17h17M8 16v-5m5 5V7m5 9V4"/>',
+        refresh: '<path d="M3 10a9 9 0 1 1 2 8M3 4v6h6"/>',
+        user: '<circle cx="12" cy="7" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/>',
+        engineer: '<path d="m8 5-6 7 6 7m8-14 6 7-6 7m-3-15-2 18"/>',
+      };
+      const icon = (name, size = 15) =>
+        `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || paths.file}</svg>`;
+      const escape = (value) =>
+        String(value).replace(
+          /[&<>"']/g,
+          (ch) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[ch],
+        );
+      const clone = (value) => JSON.parse(JSON.stringify(value));
+      const $ = (selector) => document.querySelector(selector);
+      const badge = (text, color = "") =>
+        `<span class="badge ${color}">${escape(text)}</span>`;
+      const button = (
+        action,
+        label,
+        style = "",
+        symbol = "",
+        disabled = false,
+      ) =>
+        `<button type="button" class="btn ${style}" data-action="${action}" ${disabled ? "disabled" : ""}>${symbol ? icon(symbol) : ""}${escape(label)}</button>`;
+      function queryFor(split) {
+        const measures = split
+          ? "    SUM(CASE WHEN t.amount > 0 THEN t.amount ELSE 0 END) AS inflows,\n    SUM(CASE WHEN t.amount < 0 THEN -t.amount ELSE 0 END) AS outflows,\n    SUM(t.amount) AS net_cash_flow"
+          : "    SUM(t.amount) AS net_cash_flow";
+        return `SELECT\n    date_trunc('month', t.txn_date) AS month,\n${measures}\nFROM public.transactions AS t\nWHERE t.txn_date >= :start_date\n  AND t.txn_date < :end_date\n  AND t.currency = :currency\nGROUP BY date_trunc('month', t.txn_date)\nORDER BY month;`;
+      }
+      function makeDefinition(
+        request = defaultRequest,
+        clarification = defaultReply,
+        period = "q3",
+        currency = "USD",
+        split = false,
+      ) {
+        const fields = [
+          "month",
+          ...(split ? ["inflows", "outflows"] : []),
+          "net_cash_flow",
+        ];
+        return {
+          schemaVersion: 1,
+          title: "Monthly cash flow",
+          originalRequest: request,
+          clarifications: [clarification],
+          sources: [
+            {
+              table: "public.transactions",
+              columns: ["txn_date", "amount", "currency"],
+            },
+          ],
+          transformations: [
+            "Filter by reporting period and currency.",
+            "Group by calendar month.",
+            ...(split
+              ? [
+                  "Sum positive amounts as inflows and absolute negative amounts as outflows.",
+                ]
+              : []),
+            "Sum signed amounts as net cash flow.",
+          ],
+          query: { dialect: "postgres", sql: queryFor(split) },
+          parameters: {
+            start_date: { type: "date", default: periodOptions[period][1] },
+            end_date: {
+              type: "date",
+              default: periodOptions[period][2],
+              exclusive: true,
+            },
+            currency: { type: "string", default: currency },
+          },
+          outputFields: fields,
+          views: [
+            {
+              type: "bar",
+              x: "month",
+              series: fields.filter((f) => f !== "month"),
+            },
+            { type: "table", columns: fields },
+          ],
+        };
+      }
+      function buffersFor(d) {
+        return {
+          title: d.title,
+          sources: JSON.stringify(d.sources, null, 2),
+          transforms: d.transformations.join("\n"),
+          sql: d.query.sql,
+          parameters: JSON.stringify(d.parameters, null, 2),
+          outputs: JSON.stringify(d.outputFields, null, 2),
+          layout: JSON.stringify(d.views, null, 2),
+        };
+      }
+      function initialState() {
+        const definition = makeDefinition();
+        return {
+          step: 0,
+          furthest: 0,
+          request: defaultRequest,
+          clarification: defaultReply,
+          confirmedSignature: null,
+          definition,
+          buffers: buffersFor(definition),
+          dirty: false,
+          revision: 1,
+          status: "draft",
+          history: [],
+          approved: null,
+          approvedRevision: null,
+          tab: "report",
+          inspector: null,
+          lineageViewIndex: 0,
+          lineageField: "all",
+          lineageRelated: true,
+          feedbackText: "",
+          flash: "",
+          error: "",
+          requestPeriod: "q3",
+          requestCurrency: "USD",
+          period: "q3",
+          currency: "USD",
+          run: null,
+          runCount: 0,
+          updates: 0,
+          sourceChanged: false,
+        };
+      }
+      let state = initialState();
+      function currentEntry() {
+        return state.history.find((h) => h.revision === state.revision);
+      }
+      function syncBuffers() {
+        state.buffers = buffersFor(state.definition);
+        state.dirty = false;
+      }
+      function addRevision(definition, origin, change) {
+        const previous = state.revision;
+        state.definition = clone(definition);
+        state.revision++;
+        state.status = "pending";
+        state.history.push({
+          revision: state.revision,
+          status: "pending",
+          origin,
+          change,
+          basedOnRevision: previous,
+          definition: clone(definition),
+        });
+        state.approved = null;
+        state.approvedRevision = null;
+        state.run = null;
+        state.furthest = 3;
+        syncBuffers();
+      }
+      function go(step, advance = false) {
+        if (advance) state.furthest = Math.max(state.furthest, step);
+        if (step > state.furthest) return;
+        state.step = step;
+        state.error = "";
+        state.inspector = null;
+        render();
+        $("#stage-title").focus({ preventScroll: true });
+        if (window.matchMedia("(max-width:720px)").matches)
+          $("#screen").scrollIntoView({ block: "start" });
+      }
+      function sidebarMarkup() {
+        const groups = [
+          {
+            role: "Business user",
+            context: "Request",
+            cls: "business",
+            icon: "user",
+            indices: [0, 1, 2],
+          },
+          {
+            role: "Data engineer",
+            context: "Review",
+            cls: "engineer",
+            icon: "engineer",
+            indices: [3],
+          },
+          {
+            role: "Business user",
+            context: "Report",
+            cls: "business",
+            icon: "user",
+            indices: [4, 5],
+          },
+        ];
+        return groups
+          .map(
+            (g, index) =>
+              `${index ? `<p class="role-switch">${index === 1 ? "Switch to engineer" : "Back to business user"}</p>` : ""}<section class="flow-group ${g.cls}" aria-label="${g.role}: ${g.context}"><h2 class="group-title">${icon(g.icon, 13)}${g.role}<span>${g.context}</span></h2><div class="group-steps">${g.indices.map((i) => `<button class="step ${state.step === i ? "active" : i < state.furthest ? "done" : ""}" data-step="${i}" ${i > state.furthest ? "disabled" : ""} ${state.step === i ? 'aria-current="step"' : ""}><span class="step-number">${i < state.furthest ? icon("check", 12) : i + 1}</span><span class="step-name">${steps[i]}</span></button>`).join("")}</div></section>`,
+          )
+          .join("");
+      }
+      function requestScreen() {
+        return `<form id="request-form"><div class="conversation"><div class="assistant-label"><i class="dot"></i>GenLedge Assistant</div><p>What would you like to understand about your business?</p><div class="request-bubble"><label for="request-text">You</label><textarea id="request-text" maxlength="800" required>${escape(state.request)}</textarea></div></div>${errorMarkup()}</form>`;
+      }
+      function clarificationScreen() {
+        return `<form id="clarify-form"><div class="conversation"><p class="caption" style="margin-bottom:20px">${escape(state.request)}</p><div class="assistant-label"><i class="dot"></i>GenLedge Assistant</div><p>I can put that together. What period and currency should I use? Would you like money coming in and going out separately, or just the net cash flow?</p><div class="request-bubble chat-reply"><label for="clarification-text">You</label><textarea id="clarification-text" maxlength="1000" required>${escape(state.clarification)}</textarea></div></div>${errorMarkup()}</form>`;
+      }
+      function errorMarkup() {
+        return state.error
+          ? `<p class="field-error" role="alert">${escape(state.error)}</p>`
+          : "";
+      }
+      function waitingScreen() {
+        const ready = state.status === "approved";
+        return `<div class="handoff">${badge(ready ? "Ready" : state.status === "rejected" ? "Being revised" : "Awaiting review", ready ? "teal" : "amber")}<h3>${ready ? "Your report is ready." : state.status === "rejected" ? "Your report is being updated." : "Your request is with a data engineer."}</h3><p>${ready ? "Open it whenever you need it." : "Your report will be available once it’s approved."}</p><div class="request-summary"><p>${escape(state.request)}</p><p class="caption">${escape(state.clarification)}</p></div></div>`;
+      }
+      function editable(field, label, { code = false, sql = false } = {}) {
+        return `<div class="proposal-field"><label class="label" for="field-${field}">${label}</label><textarea id="field-${field}" class="definition-editor ${code ? "code" : ""} ${sql ? "sql" : ""}" data-definition-field="${field}" spellcheck="false" aria-describedby="editor-note">${escape(state.buffers[field])}</textarea></div>`;
+      }
+      function viewTitle(view) {
+        return typeof view.title === "string" && view.title.trim()
+          ? view.title
+          : view.type === "table"
+            ? "Monthly detail"
+            : "Cash-flow chart";
+      }
+      function fieldLabel(field) {
+        return (
+          {
+            month: "Month",
+            inflows: "Inflows",
+            outflows: "Outflows",
+            net_cash_flow: "Net cash flow",
+          }[field] || field.replaceAll("_", " ")
+        );
+      }
+      function reportPreview() {
+        const d = state.definition;
+        const period =
+          Object.keys(periodOptions).find(
+            (k) =>
+              periodOptions[k][1] === d.parameters.start_date.default &&
+              periodOptions[k][2] === d.parameters.end_date.default,
+          ) || state.requestPeriod;
+        const months = {
+          q3: ["Jul", "Aug", "Sep"],
+          "jul-aug": ["Jul", "Aug"],
+          sep: ["Sep"],
+        }[period];
+        const components = d.views
+          .map((view, index) => {
+            let body = "";
+            if (view.type === "table") {
+              body = `<div class="preview-table"><table><thead><tr>${view.columns.map((f) => `<th>${escape(fieldLabel(f))}</th>`).join("")}</tr></thead><tbody>${months.map((month) => `<tr>${view.columns.map((f) => `<td>${f === "month" ? month + " 2026" : "—"}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+            } else {
+              let marks = "";
+              const groups = months.length;
+              if (view.type === "line")
+                view.series.forEach((field, j) => {
+                  const color = ["#a2cbbb", "#becfdc", "#c6d8cc"][j % 3];
+                  const points = months.map((m, i) => [
+                    70 + i * (440 / groups),
+                    [92, 58, 76][i] + j * 13,
+                  ]);
+                  marks += `<polyline points="${points.map((p) => p.join(",")).join(" ")}" stroke="${color}" stroke-width="2.5" fill="none"/>${points.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="3.5" fill="${color}"/>`).join("")}`;
+                });
+              else
+                for (let i = 0; i < groups; i++)
+                  for (let j = 0; j < Math.min(view.series.length, 3); j++) {
+                    const w = 28;
+                    const x = 55 + i * (440 / groups) + j * 32;
+                    const height = [67, 98, 82][i] + j * 6;
+                    marks += `<rect x="${x}" y="${143 - height}" width="${w}" height="${height}" rx="3" fill="${["#b0d3c4", "#d0e3d9", "#c0d7df"][j]}"/>`;
+                  }
+              body = `<svg class="preview-chart" viewBox="0 0 560 170" role="img" aria-label="${escape(view.type)} chart layout, without report values"><path d="M30 21H535M30 62H535M30 103H535M30 144H535" stroke="#edf1f2"/>${marks}${months.map((m, i) => `<text x="${70 + i * (440 / groups)}" y="165" fill="#a0acb8" font-size="10">${m}</text>`).join("")}</svg><div class="preview-legend">${view.series.map((f, j) => `<span><i style="background:${["#a2cbbb", "#becfdc", "#c6d8cc"][j % 3]}"></i>${escape(fieldLabel(f))}</span>`).join("")}</div>`;
+            }
+            return `<article class="report-preview-component"><header><h4>${escape(viewTitle(view))}</h4><span class="component-link">Lineage ${icon("arrow", 12)}</span></header>${body}<button type="button" class="component-hit-area" data-report-view="${index}" aria-label="View lineage for ${escape(viewTitle(view))}"></button></article>`;
+          })
+          .join("");
+        return `<div class="report-preview"><div class="report-preview-heading"><div><h3>${escape(d.title)}</h3><p>${escape(periodOptions[period][0])} · ${escape(d.parameters.currency.default)}</p></div><button class="btn text small" data-open-tab="layout">Edit layout</button></div><div class="preview-components">${components}</div><p class="preview-note">Layout preview · select a component to inspect its lineage.</p></div>`;
+      }
+      function feedbackModalMarkup() {
+        return `<dialog class="feedback-modal" id="definition-inspector" aria-labelledby="inspector-title"><header class="drawer-header"><div><h3 id="inspector-title">Request changes</h3><p>Tell the agent what needs to change.</p></div><button class="drawer-close" data-action="close-inspector" aria-label="Close feedback">×</button></header><form id="feedback-form" novalidate><div class="modal-body"><label class="label" for="feedback-text">Feedback</label><textarea id="feedback-text" maxlength="1500" required aria-invalid="${Boolean(state.error)}" ${state.error ? 'aria-describedby="feedback-error"' : ""} placeholder="e.g. Show inflows and outflows separately, and use a line chart.">${escape(state.feedbackText)}</textarea>${state.error ? `<p class="field-error" id="feedback-error" role="alert">${escape(state.error)}</p>` : ""}</div><footer class="modal-actions">${button("close-inspector", "Cancel")}<button type="submit" class="btn primary">Send feedback</button></footer></form></dialog>`;
+      }
+      function inspectorMarkup() {
+        if (state.step !== 3 || !state.inspector) return "";
+        const type = state.inspector;
+        if (type === "feedback") return feedbackModalMarkup();
+        const selected =
+          state.definition.views[
+            Math.min(state.lineageViewIndex, state.definition.views.length - 1)
+          ];
+        let title = "",
+          content = "";
+        if (type === "sql") {
+          title = "Query · monthly_cash_flow";
+          content =
+            editable("sql", "SQL", { code: true, sql: true }) +
+            `<details class="drawer-section"><summary>Output fields</summary>${editable("outputs", "Output names", { code: true })}</details><details class="drawer-section"><summary>Transformations</summary>${editable("transforms", "Transformations · one per line")}</details><details class="drawer-section"><summary>Parameters</summary>${editable("parameters", "Parameter types and defaults", { code: true })}</details><details class="drawer-section"><summary>Sources</summary>${editable("sources", "Tables and columns", { code: true })}</details>`;
+        }
+        if (type === "sources") {
+          title = "Source tables";
+          content = editable("sources", "Tables and columns", { code: true });
+        }
+        if (type === "layout") {
+          title = "Report layout";
+          content = editable("layout", "Chart and table configuration", {
+            code: true,
+          });
+        }
+        return `<dialog class="editor-drawer" id="definition-inspector" aria-labelledby="inspector-title"><header class="drawer-header"><div><h3 id="inspector-title">${title}</h3><p>${type === "sql" ? `Selected component: ${escape(viewTitle(selected))}` : "Report definition · revision " + state.revision}</p></div><button class="drawer-close" data-action="close-inspector" aria-label="Close editor">×</button></header><div class="drawer-body">${content}${errorMarkup()}</div><footer class="drawer-footer">${button("close-inspector", "Close")}${button("save-edits", "Save new revision", "primary", "", !state.dirty)}</footer></dialog>`;
+      }
+      function activateInspector() {
+        const dialog = $("#definition-inspector");
+        if (!dialog) return;
+        const returnFocus =
+          state.inspector === "feedback"
+            ? '[data-action="request-changes"]'
+            : `#tab-${state.tab}`;
+        dialog.addEventListener(
+          "close",
+          () => {
+            if ($("#definition-inspector") !== dialog) return;
+            state.inspector = null;
+            $(returnFocus)?.focus({ preventScroll: true });
+          },
+          { once: true },
+        );
+        dialog.showModal();
+        if (state.inspector === "feedback")
+          $("#feedback-text").focus({ preventScroll: true });
+      }
+      function lineagePreview() {
+        const d = state.definition,
+          split = d.outputFields.includes("inflows");
+        const normalize = (sql) => sql.replace(/\s+/g, "").toLowerCase();
+        const expected = [
+          "month",
+          ...(split ? ["inflows", "outflows"] : []),
+          "net_cash_flow",
+        ];
+        const compatible =
+          normalize(d.query.sql) === normalize(queryFor(split)) &&
+          d.sources.some(
+            (s) =>
+              s.table === "public.transactions" &&
+              ["txn_date", "amount", "currency"].every((c) =>
+                s.columns.includes(c),
+              ),
+          ) &&
+          d.outputFields.length === expected.length &&
+          expected.every((f) => d.outputFields.includes(f));
+        if (!compatible)
+          return `<div class="lineage-unavailable">The sample diagram does not cover this edited query.<br>${button("open-sql", "Inspect SQL", "text small")}</div>`;
+        const index = Math.min(state.lineageViewIndex || 0, d.views.length - 1),
+          view = d.views[index];
+        const bindings =
+          view.type === "table" ? view.columns : [view.x, ...view.series];
+        const known = bindings.every((f) => expected.includes(f));
+        if (!known)
+          return `<div class="lineage-unavailable">Update the view bindings to preview this component.</div>`;
+        const outputs = expected.filter((f) => bindings.includes(f));
+        const metrics = outputs.filter((f) => f !== "month");
+        const expressions = {
+          month: "date_trunc('month', t.txn_date)",
+          net_cash_flow: "SUM(t.amount)",
+          inflows: "SUM(CASE WHEN t.amount > 0 THEN t.amount ELSE 0 END)",
+          outflows: "SUM(CASE WHEN t.amount < 0 THEN -t.amount ELSE 0 END)",
+        };
+        const shortExpressions = {
+          month: "date_trunc('month', txn_date)",
+          net_cash_flow: "SUM(amount)",
+          inflows: "SUM(positive amounts)",
+          outflows: "SUM(absolute negative amounts)",
+        };
+        const allowed = ["all", "amount", "filters", "relation", ...outputs];
+        const selected = allowed.includes(state.lineageField)
+          ? state.lineageField
+          : "all";
+        const selectedKeys =
+          selected === "amount"
+            ? metrics
+            : selected === "all"
+              ? outputs.concat("filters")
+              : [selected];
+        const isSelected = (key) =>
+          selected !== "all" && selectedKeys.includes(key);
+        const rowClasses = (key, context = false) =>
+          `${isSelected(key) ? " selected" : ""}${selected !== "all" && !selectedKeys.includes(key) ? " muted" : ""}${context && selected !== "relation" ? " muted" : ""}`;
+        const queryY = 70,
+          queryX = 316,
+          sourceX = 24,
+          sourceY = 72,
+          viewX = 618,
+          viewY = 94;
+        const outputY = (field) =>
+          queryY + 36 + outputs.indexOf(field) * 54 + 27;
+        const filterY = queryY + 36 + outputs.length * 54 + 34;
+        const bindingY = (i) => viewY + 36 + 96 + i * 32 + 16;
+        let wires = "";
+        function wire(key, x1, y1, x2, y2, bend, { dashed = false } = {}) {
+          const relevant =
+            selected === "all" ? !dashed : selectedKeys.includes(key);
+          const color = dashed
+            ? "#b8c6ce"
+            : key === "month"
+              ? "#90adbd"
+              : key === "filters"
+                ? "#b0c2c9"
+                : "#82b79f";
+          wires += `<path data-wire="${key}" d="M ${x1} ${y1} H ${bend} V ${y2} H ${x2}" fill="none" stroke="${relevant && selected !== "all" ? "#078b81" : color}" stroke-width="${relevant && selected !== "all" ? 2 : 1.4}" stroke-linejoin="round" ${dashed ? 'stroke-dasharray="4 4"' : ""} opacity="${selected === "all" ? 1 : relevant ? 1 : 0.15}"/>`;
+        }
+        outputs.forEach((field, i) => {
+          const origin = field === "month" ? 124 : 156;
+          wire(
+            field,
+            240,
+            origin,
+            queryX,
+            outputY(field),
+            field === "month" ? 276 : 264 - i * 5,
+          );
+        });
+        wire("filters", 240, 188, queryX, filterY, 290);
+        wire("filters", 240, 124, queryX, filterY, 300);
+        bindings.forEach((field, i) =>
+          wire(
+            field,
+            542,
+            outputY(field),
+            viewX,
+            bindingY(i),
+            field === "month" ? 590 : 566 + i * 6,
+          ),
+        );
+        if (state.lineageRelated)
+          wire("relation", 240, 220, 240, 366, 258, { dashed: true });
+        const sourceRows = [
+          ["txn_date", "date", "month"],
+          ["amount", "numeric", "amount"],
+          ["currency", "text", "filters"],
+          ["account_id", "uuid", "relation"],
+        ]
+          .map(([name, type, key]) => {
+            const active =
+              key === "amount"
+                ? metrics.some((k) => isSelected(k)) || selected === "amount"
+                : key === "month"
+                  ? isSelected("month") || selected === "filters"
+                  : isSelected(key);
+            return `<button class="schema-row mono${active ? " selected" : ""}${selected !== "all" && !active ? " muted" : ""}${key === "relation" && selected !== "relation" ? " muted" : ""}" data-lineage-field="${key}" aria-pressed="${active}" title="${key === "relation" ? "Related schema; not used by this query" : `Trace ${name}`}"><span>${name}</span><span class="field-type">${type}</span><i class="port"></i></button>`;
+          })
+          .join("");
+        const related = state.lineageRelated
+          ? `<section class="schema-node related" style="left:24px;top:314px;width:216px" aria-label="Related schema, not queried"><header>${icon("database", 12)}<span class="mono">accounts</span><span class="node-kind">related</span></header><button class="schema-row mono${rowClasses("relation", true)}" data-lineage-field="relation" aria-pressed="${selected === "relation"}"><span>id</span><span class="field-type">uuid</span><i class="port"></i></button><div class="schema-row mono muted"><span>name</span><span class="field-type">text</span></div><div class="schema-row mono muted"><span>type</span><span class="field-type">text</span></div></section>`
+          : "";
+        const queryRows = outputs
+          .map(
+            (field) =>
+              `<button class="schema-row output${rowClasses(field)}" data-lineage-field="${field}" aria-pressed="${isSelected(field)}" title="${escape(expressions[field])}"><strong class="mono">${field}</strong><small>${escape(shortExpressions[field])}</small><i class="port left"></i><i class="port"></i></button>`,
+          )
+          .join("");
+        const preview =
+          view.type === "table"
+            ? '<svg viewBox="0 0 150 55" aria-hidden="true"><path d="M6 12h138M6 25h138M6 38h138M6 51h138M52 3v48M100 3v48" stroke="#dce6e4" stroke-width="1.5"/></svg>'
+            : view.type === "line"
+              ? '<svg viewBox="0 0 150 55" aria-hidden="true"><path d="M4 3v47h143" fill="none" stroke="#e2e9e8"/><path d="m10 37 30-13 30 7 30-18 36 5" fill="none" stroke="#a7cabc" stroke-width="2"/></svg>'
+              : '<svg viewBox="0 0 150 55" aria-hidden="true"><path d="M4 3v47h143" fill="none" stroke="#e2e9e8"/><rect x="19" y="23" width="19" height="27" rx="2" fill="#c4ddd2"/><rect x="65" y="13" width="19" height="37" rx="2" fill="#a7cabc"/><rect x="111" y="5" width="19" height="45" rx="2" fill="#c4ddd2"/></svg>';
+        const graphRows = bindings
+          .map(
+            (field, i) =>
+              `<button class="schema-row binding-row mono${rowClasses(field)}" data-lineage-field="${field}" aria-pressed="${isSelected(field)}"><span class="binding-label">${view.type === "table" ? "Column" : i === 0 ? "X-axis" : "Y-axis"}</span><span>${field}</span><i class="port left"></i></button>`,
+          )
+          .join("");
+        let description = "Select a column to trace its path.";
+        if (selected === "relation")
+          description =
+            "<code>transactions.account_id → accounts.id</code><br>Schema relationship only; this query does not join accounts.";
+        else if (selected === "filters")
+          description =
+            "<code>txn_date ≥ :start_date · txn_date &lt; :end_date · currency = :currency</code>";
+        else if (selected === "amount")
+          description = `<code>transactions.amount → ${metrics.map((m) => escape(m)).join(", ")}</code>`;
+        else if (expressions[selected])
+          description = `<code>${escape(expressions[selected])} → ${escape(selected)}</code>`;
+        const kinds = {
+          bar: "Bar chart",
+          line: "Line chart",
+          table: "Detail table",
+        };
+        return `<div class="lineage-toolbar"><span class="caption">${escape(viewTitle(view))} · lineage</span><div class="lineage-options"><label><input id="lineage-related" type="checkbox" ${state.lineageRelated ? "checked" : ""}>Related schema</label><button class="btn text small" data-lineage-field="all">Show all</button></div></div><div class="schema-viewport" tabindex="0" role="region" aria-label="Column lineage diagram; scroll horizontally on small screens"><div class="schema-canvas"><span class="schema-heading" style="left:24px">Source tables</span><span class="schema-heading" style="left:316px">Query outputs</span><span class="schema-heading" style="left:618px">Report component</span><svg class="connections" viewBox="0 0 820 480" aria-hidden="true">${wires}</svg><section class="schema-node" style="left:${sourceX}px;top:${sourceY}px;width:216px"><header><button data-open-tab="sources" title="Edit source definitions">${icon("database", 12)}<span class="mono">transactions</span></button><span class="node-kind">public</span></header>${sourceRows}</section>${related}<section class="schema-node query-node" style="left:${queryX}px;top:${queryY}px;width:226px"><header><button data-open-tab="sql" title="Edit query">${icon("file", 12)}<span>monthly_cash_flow</span></button><span class="node-kind">SQL</span></header>${queryRows}<button class="query-filter ${selected === "filters" ? "selected" : ""}" data-lineage-field="filters" style="display:block;width:100%;text-align:left;background:${selected === "filters" ? "#f0f8f5" : "#fff"};border-left:0;border-right:0;border-bottom:0;border-radius:0 0 8px 8px" aria-pressed="${selected === "filters"}"><strong>Filters</strong><code>Reporting period · currency</code></button></section><section class="schema-node" style="left:${viewX}px;top:${viewY}px;width:188px"><header><button data-open-tab="layout" title="Edit view configuration">${icon(view.type === "table" ? "file" : "chart", 12)}<span>${kinds[view.type]}</span></button></header><div class="graph-placeholder">${preview}<p>Layout preview</p></div>${graphRows}</section></div></div><div class="lineage-detail"><p>${description}</p><button class="btn text small" data-open-tab="sql">Open SQL ${icon("arrow", 12)}</button></div><div class="lineage-legend"><span><i></i>Query lineage</span>${state.lineageRelated ? '<span><i class="dashed"></i>Related schema · not queried</span>' : ""}<span class="sample-label">Illustrative sample · no data retrieved</span></div>`;
+      }
+      function proposalScreen() {
+        const tabs = [
+          ["report", "Report", "file"],
+          ...state.definition.views.map((view, i) => [
+            `view-${i}`,
+            viewTitle(view),
+            view.type === "table" ? "file" : "chart",
+          ]),
+        ];
+        if (!tabs.some((t) => t[0] === state.tab)) state.tab = "report";
+        if (state.tab.startsWith("view-"))
+          state.lineageViewIndex = Number(state.tab.slice(5));
+        const content =
+          state.tab === "report" ? reportPreview() : lineagePreview();
+        return `<div class="tabs report-navigation" role="tablist" aria-label="Report and component lineage">${tabs.map(([id, label, symbol]) => `<button class="tab ${state.tab === id ? "active" : ""}" role="tab" id="tab-${id}" tabindex="${state.tab === id ? "0" : "-1"}" aria-selected="${state.tab === id}" aria-controls="proposal-panel" data-tab="${id}">${icon(symbol, 13)}${escape(label)}</button>`).join("")}</div><div id="proposal-panel" role="tabpanel" aria-labelledby="tab-${state.tab}">${content}</div><p id="editor-note" class="sr-only">Save edits as a new revision before approving.</p><div id="edit-actions" class="edit-actions" ${state.dirty ? "" : "hidden"}><span class="caption">Unsaved changes</span>${button("discard-edits", "Discard", "small")}${button("save-edits", "Save new revision", "primary small")}</div>${state.inspector ? "" : errorMarkup()}`;
+      }
+      function reviewScreen() {
+        let actions = "";
+        if (state.status === "pending")
+          actions = `<div class="actions">${button("request-changes", "Request changes", "danger", "", state.dirty)}${button("approve", "Approve", "primary", "check", state.dirty)}</div>`;
+        if (state.status === "rejected")
+          actions = `<p class="review-status">Feedback sent to the agent.</p>${button("revise", "View agent revision", "primary", "refresh", state.dirty)}`;
+        if (state.status === "approved") actions = badge("Approved", "teal");
+        return `<div class="review-layout has-lineage"><aside class="queue"><div class="queue-title">Review queue</div><div class="queue-item"><strong>${escape(state.definition.title)}</strong>${badge(state.status, state.status === "approved" ? "teal" : state.status === "rejected" ? "red" : "amber")}<p>Revision ${state.revision}</p></div></aside><div class="review-detail"><label class="sr-only" for="field-title">Report title</label><input id="field-title" class="title-input" data-definition-field="title" value="${escape(state.buffers.title)}" maxlength="100"><p class="caption">Agent-prepared definition · revision ${state.revision}</p>${proposalScreen()}<div class="review-decision">${actions}</div></div></div>`;
+      }
+      function savedScreen() {
+        return `<div class="handoff"><div class="success-icon">${icon("check", 22)}</div><h3>Your report is ready.</h3><p>Approved by your data engineer and saved for whenever you need it.</p><div class="source-card" style="margin-top:24px"><header>${icon("chart")} ${escape(state.approved.title)} ${badge("Ready", "teal")}</header><p>Open it to see the latest results.</p></div></div>`;
+      }
+      function resultTable(run) {
+        const view = state.approved.views.find((v) => v.type === "table");
+        const fields = {
+          month: ["Month", "month"],
+          inflows: ["Inflows", "inflows"],
+          outflows: ["Outflows", "outflows"],
+          net_cash_flow: ["Net cash flow", "net"],
+        };
+        return `<div class="result-table"><table><caption class="sr-only">Sample cash-flow data in ${run.currency}</caption><thead><tr>${view.columns.map((f) => `<th>${fields[f][0]}</th>`).join("")}</tr></thead><tbody>${run.rows.map((row) => `<tr>${view.columns.map((f) => `<td>${f === "month" ? `${row.month} 2026` : money(row[fields[f][1]], run.currency)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+      }
+      function resultsScreen() {
+        const run = state.run;
+        if (run.error)
+          return `<div class="handoff"><h3>${escape(state.approved.title)}</h3><p>${escape(run.error)}</p></div>`;
+        const split = state.approved.outputFields.includes("inflows"),
+          table = state.approved.views.some((v) => v.type === "table");
+        const total = (key) => run.rows.reduce((sum, row) => sum + row[key], 0);
+        const totals = split
+          ? [
+              ["Cash inflows", "inflows"],
+              ["Cash outflows", "outflows"],
+              ["Net cash flow", "net"],
+            ]
+          : [["Net cash flow", "net"]];
+        return `<div class="report-heading"><h3>${escape(state.approved.title)}</h3></div><div class="run-filters"><label class="sr-only" for="period">Reporting period</label><select id="period">${Object.entries(
+          periodOptions,
+        )
+          .map(
+            ([id, p]) =>
+              `<option value="${id}" ${state.period === id ? "selected" : ""}>${p[0]}</option>`,
+          )
+          .join(
+            "",
+          )}</select><label class="sr-only" for="currency">Reporting currency</label><select id="currency"><option value="USD" ${state.currency === "USD" ? "selected" : ""}>USD</option><option value="CAD" ${state.currency === "CAD" ? "selected" : ""}>CAD</option></select></div><div class="stats ${split ? "" : "single"}">${totals.map(([label, key]) => `<div class="stat"><span>${label}</span><strong class="metric-value ${key === "net" ? "teal" : ""}">${money(total(key), run.currency)}</strong></div>`).join("")}</div>${state.approved.views.some((v) => v.type === "bar" || v.type === "line") ? chartMarkup(run) : ""}${table ? resultTable(run) : ""}<div class="source-update"><h4>Same report, fresh data.</h4><div class="actions" style="margin-top:12px">${button("update-source", "Add sample receipt", "", "database", state.sourceChanged)}${button("refresh-run", "Refresh", "primary", "refresh")}</div>${state.sourceChanged ? `<p class="caption" role="status" style="margin-top:12px">September receipt added. Refresh to update the results.${run.period === "jul-aug" ? " Your current period excludes September." : ""}</p>` : ""}</div><div class="run-meta"><span>Sample data · Run ${state.runCount}</span></div>`;
+      }
+      function footer() {
+        if (state.step === 3)
+          return state.status === "approved"
+            ? `<div class="stage-footer"><span></span>${button("show-saved", "Switch to business user", "primary", "arrow")}</div>`
+            : "";
+        const next = [
+          ["submit-request", "Continue"],
+          ["confirm-request", "Send reply"],
+          ["engineer-view", "Switch to engineer"],
+          state.status === "approved"
+            ? ["show-saved", "Switch to business user"]
+            : null,
+          ["open-report", "Open report"],
+          null,
+        ][state.step];
+        return `<div class="stage-footer">${state.step > 0 ? button("back", state.step === 3 ? "Business view" : "Back", "text", "back") : "<span></span>"}${next ? button(next[0], next[1], state.step === 2 ? "" : "primary", "arrow") : "<span></span>"}</div>`;
+      }
+      function render() {
+        $("#steps").innerHTML = sidebarMarkup();
+        const titles = [
+          "What report do you need?",
+          "A few details",
+          state.status === "approved"
+            ? "Report ready"
+            : state.status === "rejected"
+              ? "Updating your report"
+              : "Awaiting review",
+          "Review the definition",
+          "Your reports",
+          "Your report",
+        ];
+        const bodies = [
+          requestScreen,
+          clarificationScreen,
+          waitingScreen,
+          reviewScreen,
+          savedScreen,
+          resultsScreen,
+        ];
+        $("#screen").innerHTML =
+          `<section class="stage-shell ${state.step === 3 ? "engineer" : ""}" aria-labelledby="stage-title"><header class="stage-header"><div><p class="eyebrow">Step ${state.step + 1} of ${steps.length}</p><h2 id="stage-title" tabindex="-1">${titles[state.step]}</h2></div>${badge(state.step === 3 ? "Data engineer" : "Business user", state.step === 3 ? "blue" : "teal")}</header><div class="stage-body">${state.flash && state.step === 3 ? `<p class="update-message" role="status">${escape(state.flash)}</p>` : ""}${bodies[state.step]()}</div>${footer()}</section>${inspectorMarkup()}`;
+        activateInspector();
+        $("#announcement").textContent =
+          `${state.step === 3 ? "Data engineer" : "Business user"}. Step ${state.step + 1}: ${titles[state.step]}. ${state.flash}`;
+        if (window.matchMedia("(max-width:720px)").matches) {
+          const nav = $("#steps");
+          const active = nav.querySelector("[aria-current]");
+          nav.scrollLeft +=
+            active.getBoundingClientRect().left -
+            nav.getBoundingClientRect().left -
+            12;
+        }
+      }
+      function parseNeed(reply) {
+        const text = reply.toLowerCase();
+        const period =
+          /jul(?:y)?.*(?:aug|august)/.test(text) &&
+          !/sep|q3|third quarter/.test(text)
+            ? "jul-aug"
+            : /sep|september/.test(text) && !/jul|q3|third quarter/.test(text)
+              ? "sep"
+              : "q3";
+        const currency = /\bcad\b|canadian/.test(text) ? "CAD" : "USD";
+        const split =
+          !/only net|just.*net|net.*only/.test(text) &&
+          /inflows|outflows|separat|money.*(?:in|out)|coming in|going out/.test(
+            text,
+          );
+        return { period, currency, split };
+      }
+      function submitRequest() {
+        const request = $("#request-text").value.trim();
+        if (!request) {
+          state.error = "Enter a report request.";
+          render();
+          return;
+        }
+        if (state.status === "draft" || request !== state.request) {
+          state = initialState();
+          state.request = request;
+          state.status = "clarifying";
+        }
+        go(1, true);
+      }
+      function confirmRequest() {
+        const reply = $("#clarification-text").value.trim();
+        if (!reply) {
+          state.error = "Add a reply to continue.";
+          render();
+          return;
+        }
+        const signature = JSON.stringify([state.request, reply]);
+        if (signature !== state.confirmedSignature) {
+          const request = state.request,
+            need = parseNeed(reply);
+          state = initialState();
+          state.request = request;
+          state.clarification = reply;
+          state.confirmedSignature = signature;
+          state.requestPeriod = need.period;
+          state.requestCurrency = need.currency;
+          state.period = need.period;
+          state.currency = need.currency;
+          state.definition = makeDefinition(
+            request,
+            reply,
+            need.period,
+            need.currency,
+            need.split,
+          );
+          syncBuffers();
+          state.status = "pending";
+          state.history = [
+            {
+              revision: 1,
+              status: "pending",
+              origin: "Agent",
+              definition: clone(state.definition),
+            },
+          ];
+        }
+        go(2, true);
+      }
+      function updateDirty() {
+        state.dirty =
+          JSON.stringify(state.buffers) !==
+          JSON.stringify(buffersFor(state.definition));
+        if ($("#edit-actions")) $("#edit-actions").hidden = !state.dirty;
+        document
+          .querySelectorAll('[data-action="save-edits"]')
+          .forEach((el) => (el.disabled = !state.dirty));
+        for (const action of ["approve", "request-changes", "revise"]) {
+          const el = $(`[data-action="${action}"]`);
+          if (el) el.disabled = state.dirty;
+        }
+      }
+      function parsedJSON(field, label) {
+        try {
+          return JSON.parse(state.buffers[field]);
+        } catch {
+          throw new Error(`${label} must be valid JSON.`);
+        }
+      }
+      function saveEdits() {
+        if (!state.dirty) return;
+        try {
+          const d = clone(state.definition),
+            b = state.buffers;
+          d.title = b.title.trim();
+          if (!d.title) throw new Error("Enter a report title.");
+          d.sources = parsedJSON("sources", "Sources");
+          if (
+            !Array.isArray(d.sources) ||
+            !d.sources.length ||
+            d.sources.some(
+              (s) =>
+                !s ||
+                typeof s.table !== "string" ||
+                !s.table.trim() ||
+                !Array.isArray(s.columns) ||
+                s.columns.some((c) => typeof c !== "string" || !c.trim()),
+            )
+          )
+            throw new Error(
+              "Each source needs a table name and a list of column names.",
+            );
+          d.transformations = b.transforms
+            .split("\n")
+            .map((t) => t.trim())
+            .filter(Boolean);
+          if (!d.transformations.length)
+            throw new Error("Add at least one transformation.");
+          d.query.sql = b.sql.trim();
+          if (!d.query.sql) throw new Error("Add the proposed SQL.");
+          d.parameters = parsedJSON("parameters", "Parameters");
+          if (
+            !d.parameters ||
+            typeof d.parameters !== "object" ||
+            Array.isArray(d.parameters) ||
+            !["start_date", "end_date", "currency"].every(
+              (k) =>
+                d.parameters[k] && typeof d.parameters[k].default === "string",
+            )
+          )
+            throw new Error(
+              "Provide start_date, end_date, and currency defaults.",
+            );
+          if (
+            !/^\d{4}-\d{2}-\d{2}$/.test(d.parameters.start_date.default) ||
+            !/^\d{4}-\d{2}-\d{2}$/.test(d.parameters.end_date.default) ||
+            d.parameters.start_date.default >= d.parameters.end_date.default
+          )
+            throw new Error(
+              "Use valid ISO dates with the start before the end.",
+            );
+          d.outputFields = parsedJSON("outputs", "Output fields");
+          if (
+            !Array.isArray(d.outputFields) ||
+            !d.outputFields.length ||
+            d.outputFields.some((f) => typeof f !== "string" || !f.trim()) ||
+            new Set(d.outputFields).size !== d.outputFields.length
+          )
+            throw new Error("Output fields must be unique names.");
+          d.views = parsedJSON("layout", "Layout");
+          if (
+            !Array.isArray(d.views) ||
+            !d.views.length ||
+            d.views.some(
+              (v) => !v || !["bar", "line", "table"].includes(v.type),
+            )
+          )
+            throw new Error("Use bar, line, or table view configurations.");
+          for (const v of d.views) {
+            const fields =
+              v.type === "table"
+                ? v.columns
+                : [v.x, ...(Array.isArray(v.series) ? v.series : [])];
+            if (
+              (v.type !== "table" &&
+                (!Array.isArray(v.series) || !v.series.length)) ||
+              !Array.isArray(fields) ||
+              !fields.length ||
+              fields.some((f) => !d.outputFields.includes(f))
+            )
+              throw new Error(
+                "Layout bindings must reference declared output fields.",
+              );
+          }
+          addRevision(d, "Engineer", "Edited the report definition.");
+          state.inspector = null;
+          state.error = "";
+          state.flash = `Revision ${state.revision} saved. Awaiting approval.`;
+          render();
+        } catch (error) {
+          state.error = error.message;
+          render();
+        }
+      }
+      function requestChanges() {
+        if (state.status !== "pending" || state.dirty) return;
+        const feedback = state.feedbackText.trim();
+        if (!feedback) {
+          state.error = "Add feedback for the agent.";
+          render();
+          $("#feedback-text").focus();
+          return;
+        }
+        currentEntry().status = "rejected";
+        currentEntry().feedback = feedback;
+        state.status = "rejected";
+        state.approved = null;
+        state.approvedRevision = null;
+        state.run = null;
+        state.furthest = 3;
+        state.error = "";
+        state.inspector = null;
+        render();
+      }
+      function revise() {
+        if (state.status !== "rejected" || state.dirty) return;
+        const d = clone(state.definition),
+          text = currentEntry().feedback,
+          lower = text.toLowerCase();
+        const before = JSON.stringify(d),
+          oldSplit = d.outputFields.includes("inflows");
+        let split = oldSplit,
+          needsSQL = false,
+          manualSQL = false;
+        if (/only net|just.*net|remove.*inflow/.test(lower)) {
+          split = false;
+          needsSQL = true;
+        } else if (/inflow|outflow|separat|money.*(?:in|out)/.test(lower)) {
+          split = true;
+          needsSQL = true;
+        }
+        if (needsSQL && split !== oldSplit) {
+          const normalized = (s) => s.replace(/\s+/g, "").toLowerCase();
+          if (normalized(d.query.sql) === normalized(queryFor(oldSplit))) {
+            d.query.sql = queryFor(split);
+            d.outputFields = [
+              "month",
+              ...(split ? ["inflows", "outflows"] : []),
+              "net_cash_flow",
+            ];
+            d.views.forEach((v) => {
+              if (v.type === "table") v.columns = d.outputFields.slice();
+              else v.series = d.outputFields.filter((f) => f !== "month");
+            });
+            d.transformations = d.transformations.filter(
+              (t) => !/sum positive amounts as inflows/.test(t),
+            );
+            if (split)
+              d.transformations.push(
+                "Sum positive amounts as inflows and absolute negative amounts as outflows.",
+              );
+          } else manualSQL = true;
+        }
+        const chart = d.views.find(
+          (v) => v.type === "bar" || v.type === "line",
+        );
+        if (chart && /line chart/.test(lower)) chart.type = "line";
+        else if (chart && /bar chart/.test(lower)) chart.type = "bar";
+        if (/remove.*table|without.*table|chart only/.test(lower))
+          d.views = d.views.filter((v) => v.type !== "table");
+        else if (
+          /add.*table|include.*table/.test(lower) &&
+          !d.views.some((v) => v.type === "table")
+        )
+          d.views.push({ type: "table", columns: d.outputFields.slice() });
+        const title = text.match(
+          /(?:title|call it|name it)\s*(?:to|:)?\s*["“]([^"”]+)["”]/i,
+        );
+        if (title) d.title = title[1];
+        const changed = JSON.stringify(d) !== before;
+        addRevision(d, "Agent", text);
+        state.feedbackText = "";
+        state.error = "";
+        state.flash = manualSQL
+          ? "Feedback preserved. Adjust the custom SQL before approving."
+          : changed
+            ? `Revision ${state.revision} updated from your feedback.`
+            : "Feedback attached to the new draft. Edit the sections to complete the change.";
+        go(3);
+      }
+      function approve() {
+        if (state.status !== "pending" || state.dirty) return;
+        state.status = "approved";
+        currentEntry().status = "approved";
+        state.approved = clone(state.definition);
+        state.approvedRevision = state.revision;
+        state.furthest = Math.max(state.furthest, 4);
+        state.flash = `Revision ${state.revision} approved.`;
+        render();
+      }
+      function openReport() {
+        if (!state.approved || state.status !== "approved") return;
+        state.period =
+          Object.keys(periodOptions).find(
+            (k) =>
+              periodOptions[k][1] ===
+                state.approved.parameters.start_date.default &&
+              periodOptions[k][2] ===
+                state.approved.parameters.end_date.default,
+          ) || state.requestPeriod;
+        state.currency = state.approved.parameters.currency.default;
+        executeSimulation();
+      }
+      function executeSimulation() {
+        if (!state.approved || state.status !== "approved") return;
+        state.runCount++;
+        const d = state.approved,
+          normalize = (s) => s.replace(/\s+/g, "").toLowerCase();
+        const split = d.outputFields.includes("inflows");
+        const knownFields = [
+          "month",
+          ...(split ? ["inflows", "outflows"] : []),
+          "net_cash_flow",
+        ];
+        const compatible =
+          d.outputFields.length === knownFields.length &&
+          knownFields.every((f) => d.outputFields.includes(f)) &&
+          d.views.every(
+            (v) =>
+              v.type === "table" ||
+              (v.x === "month" &&
+                v.series.every((f) =>
+                  ["inflows", "outflows", "net_cash_flow"].includes(f),
+                )),
+          ) &&
+          d.sources.some(
+            (s) =>
+              s.table === "public.transactions" &&
+              ["txn_date", "amount", "currency"].every((c) =>
+                s.columns.includes(c),
+              ),
+          ) &&
+          normalize(d.query.sql) === normalize(queryFor(split)) &&
+          ["USD", "CAD"].includes(state.currency) &&
+          Object.values(periodOptions).some(
+            (p) =>
+              p[1] === d.parameters.start_date.default &&
+              p[2] === d.parameters.end_date.default,
+          );
+        if (!compatible) {
+          state.run = {
+            error:
+              "This edited definition has no matching sample preview. Its saved instructions are preserved.",
+            revision: state.approvedRevision,
+          };
+          go(5, true);
+          return;
+        }
+        const months = {
+            q3: ["07", "08", "09"],
+            "jul-aug": ["07", "08"],
+            sep: ["09"],
+          }[state.period],
+          names = { "07": "Jul", "08": "Aug", "09": "Sep" };
+        const rows = months.map((m) => ({
+          month: names[m],
+          inflows: 0,
+          outflows: 0,
+          net: 0,
+        }));
+        sourceTransactions()
+          .filter(
+            (t) => t[1] === state.currency && months.includes(t[0].slice(5, 7)),
+          )
+          .forEach((t) => {
+            const row = rows[months.indexOf(t[0].slice(5, 7))];
+            if (t[2] > 0) row.inflows += t[2];
+            else row.outflows -= t[2];
+            row.net += t[2];
+          });
+        state.run = {
+          id: `demo-run-${state.runCount}`,
+          revision: state.approvedRevision,
+          rows,
+          currency: state.currency,
+          period: state.period,
+          sourceVersion: state.updates + 1,
+        };
+        state.sourceChanged = false;
+        go(5, true);
+      }
+      function handleAction(action) {
+        state.flash = "";
+        state.error = "";
+        if (action === "reset") {
+          state = initialState();
+          render();
+          $("#stage-title").focus();
+          return;
+        }
+        if (action === "home") {
+          go(0);
+          return;
+        }
+        if (action === "back") {
+          go(Math.max(0, state.step - 1));
+          return;
+        }
+        if (action === "submit-request") {
+          submitRequest();
+          return;
+        }
+        if (action === "confirm-request") {
+          confirmRequest();
+          return;
+        }
+        if (action === "engineer-view") {
+          go(3, true);
+          return;
+        }
+        if (action === "save-edits") {
+          saveEdits();
+          return;
+        }
+        if (action === "open-sql") {
+          state.inspector = "sql";
+          render();
+          return;
+        }
+        if (action === "close-inspector") {
+          const dialog = $("#definition-inspector");
+          state.inspector = null;
+          if (dialog?.open) dialog.close();
+          return;
+        }
+        if (action === "discard-edits") {
+          syncBuffers();
+          render();
+          return;
+        }
+        if (action === "request-changes") {
+          if (state.status === "pending" && !state.dirty) {
+            state.inspector = "feedback";
+            render();
+          }
+          return;
+        }
+        if (action === "revise") {
+          revise();
+          return;
+        }
+        if (action === "approve") {
+          approve();
+          return;
+        }
+        if (action === "show-saved") {
+          if (state.approved) go(4, true);
+          return;
+        }
+        if (action === "open-report") {
+          openReport();
+          return;
+        }
+        if (action === "refresh-run") {
+          executeSimulation();
+          return;
+        }
+        if (action === "update-source") {
+          state.updates++;
+          state.sourceChanged = true;
+          render();
+          return;
+        }
+      }
+      document.addEventListener("click", (event) => {
+        const trace = event.target.closest("[data-lineage-field]");
+        if (trace) {
+          state.lineageField = trace.dataset.lineageField;
+          render();
+          return;
+        }
+        const component = event.target.closest("[data-report-view]");
+        if (component) {
+          state.lineageViewIndex = Number(component.dataset.reportView);
+          state.lineageField = "all";
+          state.tab = `view-${state.lineageViewIndex}`;
+          render();
+          $(`#tab-${state.tab}`).focus();
+          return;
+        }
+        const open = event.target.closest("[data-open-tab]");
+        if (open) {
+          state.inspector = open.dataset.openTab;
+          render();
+          return;
+        }
+        const action = event.target.closest("[data-action]");
+        if (action && !action.disabled) {
+          event.preventDefault();
+          handleAction(action.dataset.action);
+          return;
+        }
+        const step = event.target.closest("[data-step]");
+        if (step && !step.disabled) {
+          state.flash = "";
+          go(Number(step.dataset.step));
+          return;
+        }
+        const tab = event.target.closest("[data-tab]");
+        if (tab) {
+          state.tab = tab.dataset.tab;
+          render();
+          $(`#tab-${state.tab}`).focus();
+        }
+      });
+      document.addEventListener("input", (event) => {
+        if (event.target.dataset.definitionField) {
+          state.buffers[event.target.dataset.definitionField] =
+            event.target.value;
+          state.error = "";
+          updateDirty();
+        }
+        if (event.target.id === "feedback-text") {
+          state.feedbackText = event.target.value;
+          if (state.error && event.target.value.trim()) {
+            state.error = "";
+            event.target.setAttribute("aria-invalid", "false");
+            event.target.removeAttribute("aria-describedby");
+            $("#feedback-error")?.remove();
+          }
+        }
+        if (event.target.id === "clarification-text")
+          state.clarification = event.target.value;
+      });
+      document.addEventListener("change", (event) => {
+        if (event.target.id === "lineage-related") {
+          state.lineageRelated = event.target.checked;
+          render();
+          return;
+        }
+        if (event.target.id === "period") {
+          state.period = event.target.value;
+          executeSimulation();
+        }
+        if (event.target.id === "currency") {
+          state.currency = event.target.value;
+          executeSimulation();
+        }
+      });
+      document.addEventListener("submit", (event) => {
+        event.preventDefault();
+        if (event.target.id === "request-form") submitRequest();
+        if (event.target.id === "clarify-form") confirmRequest();
+        if (event.target.id === "feedback-form") requestChanges();
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && state.inspector) {
+          event.preventDefault();
+          handleAction("close-inspector");
+          return;
+        }
+        if (
+          !event.target.matches(".report-navigation [role=tab]") ||
+          !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)
+        )
+          return;
+        event.preventDefault();
+        const tabs = [
+            ...document.querySelectorAll(".report-navigation [role=tab]"),
+          ],
+          index = tabs.indexOf(event.target);
+        const next =
+          event.key === "Home"
+            ? 0
+            : event.key === "End"
+              ? tabs.length - 1
+              : (index + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) %
+                tabs.length;
+        state.tab = tabs[next].dataset.tab;
+        render();
+        $(`#tab-${state.tab}`).focus();
+      });
+      const baseTransactions = [
+        ["2026-07-06", "USD", 6200000],
+        ["2026-07-12", "USD", -2750000],
+        ["2026-07-28", "USD", -1320000],
+        ["2026-08-04", "USD", 5800000],
+        ["2026-08-14", "USD", -3100000],
+        ["2026-08-29", "USD", -1410000],
+        ["2026-09-07", "USD", 6425000],
+        ["2026-09-16", "USD", -3200000],
+        ["2026-09-27", "USD", -1507000],
+        ["2026-07-08", "CAD", 3900000],
+        ["2026-07-21", "CAD", -2610000],
+        ["2026-08-09", "CAD", 4200000],
+        ["2026-08-23", "CAD", -2880000],
+        ["2026-09-10", "CAD", 4550000],
+        ["2026-09-22", "CAD", -3010000],
+      ];
+      function sourceTransactions() {
+        const rows = baseTransactions.map((r) => r.slice());
+        for (let i = 0; i < state.updates; i++)
+          rows.push(
+            ["2026-09-29", "USD", 275000],
+            ["2026-09-29", "CAD", 190000],
+          );
+        return rows;
+      }
+      const money = (cents, currency) =>
+        new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency,
+          maximumFractionDigits: 0,
+        }).format(cents / 100);
+      function chartMarkup(run) {
+        const split = state.approved.outputFields.includes("inflows");
+        const view = state.approved.views.find(
+          (v) => v.type === "line" || v.type === "bar",
+        );
+        const isLine = view.type === "line";
+        const bindings = {
+          inflows: ["inflows", "Inflows", "#078b81"],
+          outflows: ["outflows", "Outflows", "#7ea4bf"],
+          net_cash_flow: [
+            "net",
+            "Net cash flow",
+            split ? "#92bca1" : "#078b81",
+          ],
+        };
+        const series = view.series.map((field) => bindings[field]);
+        const max =
+          Math.max(
+            1,
+            ...run.rows.flatMap((row) => series.map((s) => row[s[0]])),
+          ) * 1.2;
+        const width = 600,
+          height = 225,
+          left = 54,
+          right = 18,
+          top = 16,
+          bottom = 35,
+          plotW = width - left - right,
+          plotH = height - top - bottom;
+        const y = (v) => top + plotH - (v / max) * plotH;
+        let svg = "";
+        for (let i = 0; i < 4; i++) {
+          const v = (max * i) / 3;
+          svg += `<line x1="${left}" y1="${y(v)}" x2="${width - right}" y2="${y(v)}" stroke="#edf0f3"/><text x="${left - 10}" y="${y(v) + 4}" text-anchor="end" fill="#98a2b3" font-size="10">${Math.round(v / 100000)}k</text>`;
+        }
+        const group = plotW / run.rows.length;
+        run.rows.forEach((row, i) => {
+          svg += `<text x="${left + group * (i + 0.5)}" y="${height - 12}" text-anchor="middle" fill="#8590a0" font-size="10">${row.month}</text>`;
+        });
+        series.forEach((s, si) => {
+          if (isLine) {
+            const points = run.rows
+              .map((r, i) => `${left + group * (i + 0.5)},${y(r[s[0]])}`)
+              .join(" ");
+            svg += `<polyline fill="none" stroke="${s[2]}" stroke-width="2.5" points="${points}"/>`;
+            run.rows.forEach((row, i) => {
+              svg += `<circle cx="${left + group * (i + 0.5)}" cy="${y(row[s[0]])}" r="4" fill="${s[2]}"><title>${row.month} ${s[1]}: ${money(row[s[0]], run.currency)}</title></circle>`;
+            });
+          } else {
+            const barW = Math.min(45, (group * 0.65) / series.length);
+            run.rows.forEach((row, i) => {
+              const x =
+                left +
+                group * (i + 0.5) -
+                (barW * series.length) / 2 +
+                si * barW;
+              svg += `<rect x="${x}" y="${y(row[s[0]])}" width="${barW - 4}" height="${Math.max(0, plotH - (y(row[s[0]]) - top))}" rx="3" fill="${s[2]}"><title>${row.month} ${s[1]}: ${money(row[s[0]], run.currency)}</title></rect>`;
+            });
+          }
+        });
+        const accessible = run.rows
+          .map(
+            (r) =>
+              `${r.month}: ${series.map((s) => `${s[1]} ${money(r[s[0]], run.currency)}`).join(", ")}`,
+          )
+          .join("; ");
+        return `<div class="report-chart"><h4>Monthly cash flow <span class="caption">(${run.currency})</span></h4><svg class="chart-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escape(accessible)}"><title>Simulated monthly cash-flow results</title>${svg}</svg><div class="legend">${series.map((s) => `<span><i style="background:${s[2]}"></i>${s[1]}</span>`).join("")}</div></div>`;
+      }
+
+      render();
+    </script>
+  </body>
+</html>

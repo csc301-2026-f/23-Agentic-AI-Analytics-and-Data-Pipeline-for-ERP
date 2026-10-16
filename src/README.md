@@ -1,20 +1,20 @@
 # Run the app locally
 
-## Start both servers with one command
+## Run the D2 mock report-definition demo
 
-From the repository root, run this in PowerShell:
+From the repository root, start the frontend-only demo in PowerShell:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\src\start-dev.ps1
 ```
 
-The script checks the Python dependencies, installs them from `requirements.txt`
-if needed, starts the FastAPI backend, and waits for its health check before
-opening a PowerShell window for the Next.js frontend. Leave both windows open
-while using the app. Open the frontend URL printed by Next.js, usually
-<http://localhost:3000/>.
+This starts Next.js with `REVIEW_DEMO_MODE=mock`; it does not read the root
+`.env`, start FastAPI, or connect to a database. Open:
 
-## Start the servers manually
+- Business user: <http://127.0.0.1:3000/demo>
+- Data engineer: <http://127.0.0.1:3000/review>
+
+## Start the full app manually
 
 Open two PowerShell terminals.
 
