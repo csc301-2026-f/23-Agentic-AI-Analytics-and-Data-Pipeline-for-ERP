@@ -1,160 +1,141 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import type { FormEvent } from 'react'
 import Link from 'next/link'
-import { PayloadValue } from './ReportPayloadPreview'
+import MappingLineageCanvas from './MappingLineageCanvas'
 import {
-  createBusinessDemoDraft,
-  createBusinessDemoRevision,
-  getReviewMode,
-  loadApprovedReport,
-  loadBusinessStatus,
-  type BusinessReportStatus,
-  type ReviewMode,
+  createMockReportRequest,
+  getApprovedDefinitions,
+  getLatestMappingProposals,
+  loadMockReviewState,
+  resetMockReviewState,
+  submitMappingProposal,
+  subscribeToMockReviewState,
+  type MappingProposal,
+  type MockReportRequest,
+  type MockReviewState,
 } from '../../services/review'
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat('en', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(value))
-}
-
-function statusLabel(status: BusinessReportStatus['status']) {
-  return status.charAt(0).toUpperCase() + status.slice(1)
+function statusLabel(status: string) {
+  return status.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
 }
 
 export default function BusinessWorkspace() {
-  const [mode, setMode] = useState<ReviewMode | null>(null)
-  const [draftId, setDraftId] = useState<string | null>(null)
-  const [reportStatus, setReportStatus] = useState<BusinessReportStatus | null>(null)
-  const [approvedPayload, setApprovedPayload] = useState<Record<string, unknown> | null>(
-    null,
+  const [state, setState] = useState<MockReviewState>({
+    proposals: [],
+    reportRequests: [],
+  })
+  const [requestText, setRequestText] = useState(
+    'I need a monthly view of cash moving in and out of the business.',
   )
+  const [period, setPeriod] = useState('Q3 2026')
+  const [currency, setCurrency] = useState('USD')
+  const [selectedRunId, setSelectedRunId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
 
-  const refresh = useCallback(
-    async (selectedMode = mode, selectedId = draftId) => {
-      if (!selectedMode || !selectedId) return
-      setIsLoading(true)
-      setError('')
-      try {
-        const latestStatus = await loadBusinessStatus(selectedMode, selectedId)
-        setReportStatus(latestStatus)
-        if (latestStatus.status === 'approved') {
-          setApprovedPayload(await loadApprovedReport(selectedMode, selectedId))
-        } else {
-          setApprovedPayload(null)
-        }
-      } catch (requestError) {
-        setError(
-          requestError instanceof Error
-            ? requestError.message
-            : 'The report status could not be loaded.',
-        )
-      } finally {
-        setIsLoading(false)
-      }
-    },
-    [draftId, mode],
-  )
-
-  useEffect(() => {
-    let isActive = true
-    const requestedId = new URLSearchParams(window.location.search).get('draftId')
-
-    async function initialize() {
-      try {
-        const loadedMode = await getReviewMode()
-        if (!isActive) return
-        setMode(loadedMode)
-        setDraftId(requestedId)
-        if (requestedId) {
-          const latestStatus = await loadBusinessStatus(loadedMode, requestedId)
-          if (!isActive) return
-          setReportStatus(latestStatus)
-          if (latestStatus.status === 'approved') {
-            setApprovedPayload(await loadApprovedReport(loadedMode, requestedId))
-          }
-        }
-        if (isActive) setIsLoading(false)
-      } catch (requestError) {
-        if (!isActive) return
-        setError(
-          requestError instanceof Error
-            ? requestError.message
-            : 'The demo could not be initialized.',
-        )
-        setIsLoading(false)
-      }
-    }
-
-    void initialize()
-
-    return () => {
-      isActive = false
-    }
-  }, [])
-
-  useEffect(() => {
-    function refreshWhenFocused() {
-      if (document.visibilityState === 'visible') void refresh()
-    }
-    window.addEventListener('focus', refreshWhenFocused)
-    document.addEventListener('visibilitychange', refreshWhenFocused)
-    return () => {
-      window.removeEventListener('focus', refreshWhenFocused)
-      document.removeEventListener('visibilitychange', refreshWhenFocused)
-    }
-  }, [refresh])
-
-  async function submitSample() {
-    if (!mode || isSubmitting) return
-    setIsSubmitting(true)
-    setError('')
-    setNotice('')
+  function refresh() {
     try {
-      const created = await createBusinessDemoDraft(mode)
-      setDraftId(created.draftId)
-      window.history.replaceState(null, '', `/demo?draftId=${created.draftId}`)
-      setReportStatus(created)
-      setApprovedPayload(null)
-      setNotice('Sample draft submitted. It is awaiting reviewer approval.')
-    } catch (requestError) {
+      setState(loadMockReviewState())
+      setError('')
+    } catch (loadError) {
       setError(
-        requestError instanceof Error
-          ? requestError.message
-          : 'The sample report could not be submitted.',
+        loadError instanceof Error
+          ? loadError.message
+          : 'Mock report definition data could not be loaded.',
       )
-    } finally {
-      setIsSubmitting(false)
     }
   }
 
-  async function submitRevision() {
-    if (!mode || !draftId || isSubmitting) return
-    setIsSubmitting(true)
+  useEffect(() => {
+    const initialLoad = window.setTimeout(() => {
+      refresh()
+      setIsLoading(false)
+    }, 0)
+    const unsubscribe = subscribeToMockReviewState(() => refresh())
+    return () => {
+      window.clearTimeout(initialLoad)
+      unsubscribe()
+    }
+  }, [])
+
+  const latestProposals = useMemo(
+    () => getLatestMappingProposals(state.proposals),
+    [state.proposals],
+  )
+  const approvedDefinitions = getApprovedDefinitions(state.proposals)
+  const selectedRun =
+    state.reportRequests.find((request) => request.id === selectedRunId) ??
+    state.reportRequests[state.reportRequests.length - 1] ??
+    null
+
+  function submitRequest(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
     setError('')
     setNotice('')
     try {
-      const revised = await createBusinessDemoRevision(mode, draftId)
-      setReportStatus(revised)
-      setApprovedPayload(null)
+      const proposal = submitMappingProposal(requestText)
+      setState(loadMockReviewState())
       setNotice(
-        `Revision ${revised.revision} submitted. It is awaiting reviewer approval.`,
+        `Mapping proposal revision ${proposal.revision} submitted. It is awaiting data engineer review.`,
+      )
+      setRequestText('')
+    } catch (submitError) {
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : 'The mock mapping request could not be submitted.',
+      )
+    }
+  }
+
+  function requestReport(mappingId: string) {
+    setError('')
+    setNotice('')
+    try {
+      const request = createMockReportRequest(mappingId, { period, currency })
+      const nextState = loadMockReviewState()
+      setState(nextState)
+      setSelectedRunId(request.id)
+      setNotice(
+        `Mock report request created using approved definition revision ${request.definitionRevision}.`,
       )
     } catch (requestError) {
       setError(
         requestError instanceof Error
           ? requestError.message
-          : 'A revised sample report could not be submitted.',
+          : 'The mock report request could not be created.',
       )
-    } finally {
-      setIsSubmitting(false)
     }
+  }
+
+  function resetDemo() {
+    resetMockReviewState()
+    setState({ proposals: [], reportRequests: [] })
+    setRequestText('I need a monthly view of cash moving in and out of the business.')
+    setSelectedRunId(null)
+    setError('')
+    setNotice('Mock definition and report-request data reset.')
+  }
+
+  function proposalFeedback(proposal: MappingProposal) {
+    return [...proposal.reviewHistory]
+      .reverse()
+      .find(
+        (event) =>
+          event.action === 'changes_requested' &&
+          event.revision === proposal.revision,
+      )?.feedback
+  }
+
+  function definitionForRequest(request: MockReportRequest) {
+    return state.proposals.find(
+      (proposal) =>
+        proposal.mappingId === request.mappingId &&
+        proposal.revision === request.definitionRevision,
+    )?.definition
   }
 
   return (
@@ -163,179 +144,322 @@ export default function BusinessWorkspace() {
         <div className="topbar-inner">
           <Link className="brand" href="/" aria-label="GenLedge home">
             gen<span>ledge</span>
-            <span className="brand-mark" aria-hidden="true">
-              ↗
-            </span>
+            <span className="brand-mark" aria-hidden="true">↗</span>
           </Link>
           <nav className="breadcrumb" aria-label="Breadcrumb">
             <Link href="/">Workspace</Link>
-            <span className="breadcrumb-chevron" aria-hidden="true">
-              ›
-            </span>
+            <span className="breadcrumb-chevron" aria-hidden="true">›</span>
             <span className="breadcrumb-current">Business demo</span>
-            <span className="breadcrumb-chevron" aria-hidden="true">
-              ›
-            </span>
-            <Link href="/review">Reviewer workspace</Link>
+            <span className="breadcrumb-chevron" aria-hidden="true">›</span>
+            <Link href="/review">Data engineer review</Link>
           </nav>
         </div>
       </header>
 
-      <section className="review-page business-page" aria-labelledby="business-title">
+      <section className="review-page mapping-business-page" aria-labelledby="business-title">
         <div className="review-heading">
           <div>
-            <p className="review-eyebrow">GenLedge · D2 business-user view</p>
-            <h1 id="business-title">Report approval demo</h1>
+            <p className="review-eyebrow">GenLedge · D2 business-user workspace</p>
+            <h1 id="business-title">Reusable report definitions</h1>
             <p className="review-subtitle">
-              Submit a sample report and view its payload only after approval.
+              Request a mapping definition, then reuse it after a data engineer
+              approves its structure.
             </p>
           </div>
-          {mode && (
-            <span className={`review-demo-label review-mode-${mode}`}>
+          <div className="review-heading-actions">
+            <span className="review-demo-label review-mode-mock">
               <span aria-hidden="true" />
-              {mode === 'real'
-                ? 'REAL BACKEND · PostgreSQL'
-                : 'MOCK · browser-local data'}
+              MOCK · browser-local data
             </span>
-          )}
-        </div>
-
-        <aside className="business-demo-notice">
-          <strong>Demo substitute for agent-generated reports.</strong> This page
-          submits a fixed sample cash-flow report; it does not call or represent the
-          Agent Harness.
-        </aside>
-
-        {!draftId ? (
-          <section className="business-start-card">
-            <span className="review-empty-icon" aria-hidden="true">
-              ↗
-            </span>
-            <h2>Start a report approval demo</h2>
-            <p>
-              Submit a sample cash-flow draft to the review queue. The business view
-              will show its status, but not its report contents, until a reviewer
-              approves it.
-            </p>
             <button
-              className="review-button review-button-approve"
-              disabled={!mode || isSubmitting}
-              onClick={() => void submitSample()}
+              className="review-button review-button-secondary"
+              disabled={isLoading}
+              onClick={refresh}
               type="button"
             >
-              {isSubmitting ? 'Submitting…' : 'Submit sample cash-flow report'}
+              Refresh
             </button>
-          </section>
+            <button
+              className="review-button review-button-secondary"
+              onClick={resetDemo}
+              type="button"
+            >
+              Reset demo
+            </button>
+          </div>
+        </div>
+
+        <aside className="mapping-demo-notice">
+          <strong>Mock-only workflow.</strong> Mapping proposals use a fixed
+          illustrative cash-flow schema. No live warehouse discovery, Agent Harness,
+          SQL execution, PostgreSQL connection, or real report calculation is involved.
+        </aside>
+
+        {isLoading ? (
+          <div className="review-state" role="status">Loading mock definitions…</div>
         ) : (
-          <section className="business-report-card" aria-label="Submitted report">
-            <div className="business-report-header">
-              <div>
-                <p className="review-eyebrow">Submitted report</p>
-                <h2>Draft {draftId.slice(0, 8)}</h2>
-              </div>
-              <div className="business-report-actions">
-                <button
-                  className="review-button review-button-secondary"
-                  disabled={isLoading}
-                  onClick={() => void refresh()}
-                  type="button"
-                >
-                  {isLoading ? 'Refreshing…' : 'Refresh status'}
-                </button>
-              </div>
-            </div>
-
-            {isLoading ? (
-              <div className="business-status" role="status">
-                <span className="review-spinner" aria-hidden="true" />
-                Loading report status…
-              </div>
-            ) : error ? (
-              <div className="review-feedback-message review-feedback-error" role="alert">
-                {error}
-              </div>
-            ) : reportStatus ? (
-              <>
-                <div className={`business-lifecycle business-lifecycle-${reportStatus.status}`}>
-                  <span aria-hidden="true">
-                    {reportStatus.status === 'approved'
-                      ? '✓'
-                      : reportStatus.status === 'rejected'
-                        ? '!'
-                        : '…'}
-                  </span>
-                  <div>
-                    <strong>
-                      {reportStatus.status === 'pending'
-                        ? 'Awaiting review'
-                        : reportStatus.status === 'approved'
-                          ? 'Approved'
-                          : 'Not approved'}
-                    </strong>
-                    <p>
-                      Revision {reportStatus.revision} · {statusLabel(reportStatus.status)}
-                      {' · '}Updated {formatDate(reportStatus.updatedAt)}
-                    </p>
-                  </div>
+          <>
+            <section className="mapping-business-card" aria-labelledby="mapping-request-title">
+              <div className="mapping-business-card-heading">
+                <div>
+                  <p className="review-eyebrow">Business user</p>
+                  <h2 id="mapping-request-title">Request a report definition</h2>
+                  <p>
+                    This submits a sample mapping proposal—not a financial report and
+                    not an Agent Harness request.
+                  </p>
                 </div>
+                <span className="mapping-step-number">01</span>
+              </div>
+              <form className="mapping-request-form" onSubmit={submitRequest}>
+                <label className="mapping-form-field" htmlFor="mapping-request">
+                  <span>What reusable report structure do you need?</span>
+                  <textarea
+                    id="mapping-request"
+                    maxLength={800}
+                    onChange={(event) => setRequestText(event.target.value)}
+                    placeholder="Describe the fields and view you need…"
+                    required
+                    value={requestText}
+                  />
+                </label>
+                <div className="mapping-form-actions">
+                  <span>Creates a pending mapping with sample schema metadata.</span>
+                  <button className="review-button review-button-approve" type="submit">
+                    Submit mapping proposal
+                  </button>
+                </div>
+              </form>
+            </section>
 
-                {notice && (
-                  <p className="review-feedback-message review-feedback-success" role="status">
-                    {notice}
+            <section className="mapping-business-card" aria-labelledby="mapping-status-title">
+              <div className="mapping-business-card-heading">
+                <div>
+                  <p className="review-eyebrow">Lifecycle</p>
+                  <h2 id="mapping-status-title">Your definition requests</h2>
+                  <p>Current status and revision; report figures are not shown here.</p>
+                </div>
+                <span className="mapping-step-number">02</span>
+              </div>
+              {latestProposals.length === 0 ? (
+                <div className="mapping-empty-state">
+                  <span className="review-empty-icon" aria-hidden="true">↗</span>
+                  <strong>No mapping requests yet</strong>
+                  <span>Submit a definition request to start the mock review flow.</span>
+                </div>
+              ) : (
+                <div className="mapping-request-list">
+                  {latestProposals.map((proposal) => {
+                    const feedback = proposalFeedback(proposal)
+                    return (
+                      <article className="mapping-request-card" key={proposal.mappingId}>
+                        <div className="mapping-request-card-heading">
+                          <div>
+                            <h3>{proposal.definition.title}</h3>
+                            <p>{proposal.requestText}</p>
+                          </div>
+                          <span className={`mapping-status mapping-status-${proposal.status}`}>
+                            {statusLabel(proposal.status)}
+                          </span>
+                        </div>
+                        <div className="mapping-request-meta">
+                          <span>Definition {proposal.mappingId.slice(0, 13)}</span>
+                          <span>Revision {proposal.revision}</span>
+                        </div>
+                        {proposal.status === 'pending' && (
+                          <p className="mapping-lifecycle-note">
+                            Awaiting data engineer review. Only definition structure is
+                            being reviewed.
+                          </p>
+                        )}
+                        {proposal.status === 'changes_requested' && (
+                          <div className="mapping-feedback-callout">
+                            <strong>Changes requested · mapping feedback</strong>
+                            <p>{feedback ?? 'See review history for requested changes.'}</p>
+                            <span>
+                              A data engineer can edit this proposal and save a corrected
+                              revision. No automatic regeneration is simulated.
+                            </span>
+                          </div>
+                        )}
+                        {proposal.status === 'approved' && (
+                          <div className="mapping-approved-note">
+                            This latest definition revision is approved and available
+                            for mock report requests.
+                          </div>
+                        )}
+                      </article>
+                    )
+                  })}
+                </div>
+              )}
+            </section>
+
+            <section className="mapping-business-card" aria-labelledby="approved-definitions-title">
+              <div className="mapping-business-card-heading">
+                <div>
+                  <p className="review-eyebrow">Published definitions</p>
+                  <h2 id="approved-definitions-title">Request a report from an approved definition</h2>
+                  <p>
+                    A newer pending or changed revision hides an older approval from
+                    this list.
                   </p>
-                )}
-
-                {reportStatus.status === 'pending' && (
-                  <p className="business-privacy-note">
-                    The report payload is not available in the business view while the
-                    draft is pending review.
-                  </p>
-                )}
-
-                {reportStatus.status === 'rejected' && (
-                  <div className="business-rejected-message">
-                    <strong>This report was not released.</strong>
-                    <p>
-                      The reviewer rejected this revision. Reviewer feedback remains
-                      in the reviewer history. You can submit a new sample revision;
-                      automatic report regeneration is not connected.
-                    </p>
-                    <button
-                      className="review-button review-button-secondary"
-                      disabled={isSubmitting}
-                      onClick={() => void submitRevision()}
-                      type="button"
-                    >
-                      {isSubmitting ? 'Submitting…' : 'Submit revised sample'}
-                    </button>
+                </div>
+                <span className="mapping-step-number">03</span>
+              </div>
+              {approvedDefinitions.length === 0 ? (
+                <div className="mapping-empty-state">
+                  <strong>No latest approved definitions</strong>
+                  <span>
+                    A data engineer must approve the current mapping revision before
+                    it can be reused.
+                  </span>
+                  <Link className="review-button review-button-secondary" href="/review">
+                    Open data engineer review
+                  </Link>
+                </div>
+              ) : (
+                <>
+                  <div className="mapping-run-parameters">
+                    <label className="mapping-form-field">
+                      <span>Reporting period · mock parameter</span>
+                      <input
+                        onChange={(event) => setPeriod(event.target.value)}
+                        value={period}
+                      />
+                    </label>
+                    <label className="mapping-form-field">
+                      <span>Currency · mock parameter</span>
+                      <select
+                        onChange={(event) => setCurrency(event.target.value)}
+                        value={currency}
+                      >
+                        <option value="USD">USD</option>
+                        <option value="CAD">CAD</option>
+                      </select>
+                    </label>
                   </div>
-                )}
+                  <div className="mapping-approved-definition-list">
+                    {approvedDefinitions.map((proposal) => (
+                      <article
+                        className="mapping-approved-definition"
+                        key={proposal.mappingId}
+                      >
+                        <div>
+                          <h3>{proposal.definition.title}</h3>
+                          <p>
+                            Approved revision {proposal.revision} ·{' '}
+                            {proposal.definition.sources
+                              .map((source) => `${source.schema}.${source.table}`)
+                              .join(', ')}
+                          </p>
+                        </div>
+                        <button
+                          className="review-button review-button-approve"
+                          onClick={() => requestReport(proposal.mappingId)}
+                          type="button"
+                        >
+                          Request mock report
+                        </button>
+                      </article>
+                    ))}
+                  </div>
+                </>
+              )}
+            </section>
 
-                {reportStatus.status === 'approved' && approvedPayload && (
-                  <section className="review-panel business-approved" aria-labelledby="approved-title">
-                    <div className="review-panel-heading">
-                      <div>
-                        <p className="review-eyebrow">Approved report</p>
-                        <h3 id="approved-title">
-                          {String(approvedPayload.title ?? 'Approved report')}
-                        </h3>
+            {selectedRun && (
+              <section className="mapping-business-card mapping-simulated-report" aria-labelledby="simulated-report-title">
+                <div className="mapping-business-card-heading">
+                  <div>
+                    <p className="review-eyebrow">Simulated report · mock fixture values</p>
+                    <h2 id="simulated-report-title">{selectedRun.title}</h2>
+                    <p>
+                      Request {selectedRun.id.slice(0, 12)} · approved definition
+                      revision {selectedRun.definitionRevision} · {selectedRun.period} ·{' '}
+                      {selectedRun.currency}
+                    </p>
+                  </div>
+                  <span className="mapping-status mapping-status-approved">Approved definition</span>
+                </div>
+                <p className="mapping-simulation-warning">
+                  Artificial demonstration figures only. No warehouse rows were
+                  retrieved and no governed query was executed.
+                </p>
+                {(() => {
+                  const definition = definitionForRequest(selectedRun)
+                  if (!definition) {
+                    return (
+                      <p className="review-feedback-message review-feedback-error" role="alert">
+                        The definition snapshot for this mock request is unavailable.
+                      </p>
+                    )
+                  }
+                  return (
+                    <>
+                      <MappingLineageCanvas definition={definition} />
+                      <div className="mapping-result-table-wrap">
+                        <table className="mapping-result-table">
+                          <thead>
+                            <tr>
+                              {definition.outputFields.map((field) => (
+                                <th key={field.id}>{field.label}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {selectedRun.rows.map((row, index) => (
+                              <tr key={`${selectedRun.id}-${index}`}>
+                                {definition.outputFields.map((field) => (
+                                  <td key={field.id}>
+                                    {typeof row[field.id] === 'number'
+                                      ? new Intl.NumberFormat('en-US', {
+                                          style: field.dataType === 'currency' ? 'currency' : 'decimal',
+                                          currency: selectedRun.currency,
+                                          maximumFractionDigits: 0,
+                                        }).format(Number(row[field.id]))
+                                      : row[field.id]}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                       </div>
-                      <span>Revision {reportStatus.revision}</span>
-                    </div>
-                    <div className="review-payload">
-                      <PayloadValue value={approvedPayload} />
-                    </div>
-                  </section>
+                    </>
+                  )
+                })()}
+                {state.reportRequests.length > 1 && (
+                  <label className="mapping-form-field mapping-run-picker">
+                    <span>Previous mock requests</span>
+                    <select
+                      onChange={(event) => setSelectedRunId(event.target.value)}
+                      value={selectedRun.id}
+                    >
+                      {[...state.reportRequests]
+                        .reverse()
+                        .map((request) => (
+                          <option key={request.id} value={request.id}>
+                            {request.title} · {request.requestedAt}
+                          </option>
+                        ))}
+                    </select>
+                  </label>
                 )}
-              </>
-            ) : null}
-          </section>
-        )}
+              </section>
+            )}
 
-        {!isLoading && error && !draftId && (
-          <p className="review-feedback-message review-feedback-error" role="alert">
-            {error}
-          </p>
+            {notice && (
+              <p className="review-feedback-message review-feedback-success" role="status">
+                {notice}
+              </p>
+            )}
+            {error && (
+              <p className="review-feedback-message review-feedback-error" role="alert">
+                {error}
+              </p>
+            )}
+          </>
         )}
       </section>
     </main>

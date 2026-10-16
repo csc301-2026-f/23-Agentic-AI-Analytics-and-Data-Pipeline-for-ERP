@@ -1,32 +1,27 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import MappingDefinitionEditor from './MappingDefinitionEditor'
+import MappingLineageCanvas from './MappingLineageCanvas'
+import ReportDefinitionPreview from './ReportDefinitionPreview'
 import {
-  decideReviewDraft,
-  filterDraftsByStatus,
-  getReviewMode,
-  loadReviewDrafts,
-  type ReviewDraft,
-  type ReviewDecision,
-  type ReviewMode,
+  decideMappingProposal,
+  getLatestMappingProposals,
+  loadMockReviewState,
+  resetMockReviewState,
+  saveMappingRevision,
+  subscribeToMockReviewState,
+  type MappingProposal,
+  type MockReviewState,
+  type ReportDefinition,
+  type ReportView,
 } from '../../services/review'
-import { PayloadValue } from './ReportPayloadPreview'
 
-function formatLabel(value: string) {
-  return value
-    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-    .replace(/[_-]+/g, ' ')
-    .replace(/\b\w/g, (letter) => letter.toUpperCase())
-}
+type ReviewTab = 'pending' | 'history'
 
-function StatusBadge({ status }: { status: ReviewDraft['status'] }) {
-  return (
-    <span className={`review-status review-status-${status}`}>
-      <span aria-hidden="true" />
-      {formatLabel(status)}
-    </span>
-  )
+function statusLabel(status: string) {
+  return status.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
 }
 
 function formatDate(value: string) {
@@ -36,151 +31,251 @@ function formatDate(value: string) {
   }).format(new Date(value))
 }
 
+function proposalKey(proposal: MappingProposal) {
+  return `${proposal.mappingId}:${proposal.revision}`
+}
+
+function cloneDefinition(definition: ReportDefinition) {
+  return structuredClone(definition)
+}
+
+function fieldsForView(view: ReportView) {
+  return view.type === 'table'
+    ? view.columnFieldIds
+    : [view.xFieldId, ...view.yFieldIds].filter(
+        (fieldId): fieldId is string => fieldId !== null,
+      )
+}
+
+function sourceColumnLabel(definition: ReportDefinition, columnId: string) {
+  for (const source of definition.sources) {
+    const column = source.selectedColumns.find((item) => item.id === columnId)
+    if (column) return `${source.schema}.${source.table}.${column.name}`
+  }
+  return null
+}
+
 export default function ReviewWorkspace() {
-  const [mode, setMode] = useState<ReviewMode | null>(null)
-  const [latestDrafts, setLatestDrafts] = useState<ReviewDraft[]>([])
-  const [historyDrafts, setHistoryDrafts] = useState<ReviewDraft[]>([])
+  const [state, setState] = useState<MockReviewState>({
+    proposals: [],
+    reportRequests: [],
+  })
+  const [activeTab, setActiveTab] = useState<ReviewTab>('pending')
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'pending' | 'history'>('pending')
+  const [selectedViewId, setSelectedViewId] = useState<string | null>(null)
+  const [editedProposal, setEditedProposal] = useState<{
+    key: string
+    definition: ReportDefinition
+  } | null>(null)
   const [feedback, setFeedback] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [loadError, setLoadError] = useState('')
   const [actionError, setActionError] = useState('')
-  const [successMessage, setSuccessMessage] = useState('')
+  const [notice, setNotice] = useState('')
 
-  useEffect(() => {
-    let isActive = true
-    getReviewMode()
-      .then(async (loadedMode) => {
-        const [loadedDrafts, loadedHistory] = await Promise.all([
-          loadReviewDrafts(loadedMode),
-          loadReviewDrafts(loadedMode, true),
-        ])
-        if (!isActive) return
-        setMode(loadedMode)
-        setLatestDrafts(loadedDrafts)
-        setHistoryDrafts(loadedHistory)
-        const firstPending = filterDraftsByStatus(loadedDrafts, ['pending'])[0]
-        setSelectedKey(
-          firstPending
-            ? `${firstPending.draftId}:${firstPending.revision}`
-            : null,
-        )
-      })
-      .catch((error: unknown) => {
-        if (isActive) {
-          setLoadError(
-            error instanceof Error ? error.message : 'Drafts could not be loaded.',
-          )
-        }
-      })
-      .finally(() => {
-        if (isActive) setIsLoading(false)
-      })
-
-    return () => {
-      isActive = false
-    }
-  }, [])
-
-  const pendingDrafts = filterDraftsByStatus(latestDrafts, ['pending'])
-  const completedDrafts = filterDraftsByStatus(historyDrafts, [
-    'approved',
-    'rejected',
-  ])
-  const visibleDrafts = activeTab === 'pending' ? pendingDrafts : completedDrafts
-  const selectedDraft = visibleDrafts.find(
-    (draft) => `${draft.draftId}:${draft.revision}` === selectedKey,
-  )
-
-  async function refreshDrafts(nextMode = mode) {
-    if (!nextMode) return
-    setIsRefreshing(true)
-    setLoadError('')
+  function refreshState() {
     try {
-      const [loadedDrafts, loadedHistory] = await Promise.all([
-        loadReviewDrafts(nextMode),
-        loadReviewDrafts(nextMode, true),
-      ])
-      setLatestDrafts(loadedDrafts)
-      setHistoryDrafts(loadedHistory)
-      const nextVisible =
-        activeTab === 'pending'
-          ? filterDraftsByStatus(loadedDrafts, ['pending'])
-          : filterDraftsByStatus(loadedHistory, ['approved', 'rejected'])
-      if (
-        !nextVisible.some(
-          (draft) => `${draft.draftId}:${draft.revision}` === selectedKey,
-        )
-      ) {
-        setSelectedKey(
-          nextVisible[0]
-            ? `${nextVisible[0].draftId}:${nextVisible[0].revision}`
-            : null,
-        )
-      }
+      const nextState = loadMockReviewState()
+      setState(nextState)
+      setLoadError('')
+      return nextState
     } catch (error) {
       setLoadError(
-        error instanceof Error ? error.message : 'Drafts could not be refreshed.',
+        error instanceof Error ? error.message : 'Mock mapping data could not be loaded.',
       )
-    } finally {
-      setIsRefreshing(false)
+      return null
     }
   }
 
-  async function submitDecision(decision: ReviewDecision) {
-    if (!selectedDraft || !mode || isSubmitting) return
-    if (decision === 'rejected' && !feedback.trim()) {
-      setActionError('Add reviewer feedback before rejecting this draft.')
+  useEffect(() => {
+    const initialLoad = window.setTimeout(() => {
+      refreshState()
+      setIsLoading(false)
+    }, 0)
+    const unsubscribe = subscribeToMockReviewState(() => {
+      refreshState()
+    })
+    return () => {
+      window.clearTimeout(initialLoad)
+      unsubscribe()
+    }
+  }, [])
+
+  const latestProposals = useMemo(
+    () => getLatestMappingProposals(state.proposals),
+    [state.proposals],
+  )
+  const pendingProposals = latestProposals.filter(
+    (proposal) => proposal.status === 'pending',
+  )
+  const historyProposals = state.proposals
+    .filter((proposal) => proposal.status !== 'pending')
+    .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
+  const visibleProposals =
+    activeTab === 'pending' ? pendingProposals : historyProposals
+  const selectedProposal =
+    visibleProposals.find((proposal) => proposalKey(proposal) === selectedKey) ??
+    visibleProposals[0] ??
+    null
+  const selectedProposalKey = selectedProposal ? proposalKey(selectedProposal) : ''
+  const editedDefinition =
+    selectedProposal && editedProposal?.key === selectedProposalKey
+      ? editedProposal.definition
+      : selectedProposal?.definition ?? null
+  const latestSelected = selectedProposal
+    ? latestProposals.find(
+        (proposal) => proposal.mappingId === selectedProposal.mappingId,
+      )
+    : null
+  const editable =
+    selectedProposal !== null &&
+    latestSelected?.revision === selectedProposal.revision &&
+    (selectedProposal.status === 'pending' ||
+      selectedProposal.status === 'changes_requested' ||
+      selectedProposal.status === 'approved')
+  const dirty =
+    selectedProposal !== null &&
+    editedDefinition !== null &&
+    JSON.stringify(editedDefinition) !== JSON.stringify(selectedProposal.definition)
+  const focusedView = editedDefinition?.views.find(
+    (view) => view.id === selectedViewId,
+  )
+  const focusedFieldIds = focusedView ? fieldsForView(focusedView) : []
+  const focusedLineage = editedDefinition?.fieldLineage.filter((lineage) =>
+    focusedFieldIds.includes(lineage.outputFieldId),
+  ) ?? []
+  const focusedSources = editedDefinition
+    ? [
+        ...new Set(
+          focusedLineage.flatMap((lineage) =>
+            lineage.sourceColumnIds.flatMap((columnId) => {
+              const name = sourceColumnLabel(editedDefinition, columnId)
+              return name ? [name] : []
+            }),
+          ),
+        ),
+      ]
+    : []
+  const focusedTransformations = editedDefinition
+    ? [
+        ...new Set(
+          focusedLineage.flatMap((lineage) =>
+            lineage.transformationIds.flatMap((transformationId) => {
+              const transformation = editedDefinition.transformations.find(
+                (item) => item.id === transformationId,
+              )
+              return transformation ? [transformation.name] : []
+            }),
+          ),
+        ),
+      ]
+    : []
+  const focusedFilters = editedDefinition
+    ? editedDefinition.filters.map((filter) => {
+        const source = sourceColumnLabel(editedDefinition, filter.sourceColumnId)
+        const operator = { gte: '≥', lt: '<', eq: '=' }[filter.operator]
+        return `${source ?? 'Unknown source field'} ${operator} :${filter.parameter} (mock ${filter.mockValue})`
+      })
+    : []
+  const focusedOutputs = editedDefinition
+    ? editedDefinition.outputFields
+        .filter((field) => focusedFieldIds.includes(field.id))
+        .map((field) => field.label)
+    : []
+
+  function updateEditedDefinition(definition: ReportDefinition) {
+    if (selectedProposal) {
+      setEditedProposal({ key: selectedProposalKey, definition })
+    }
+  }
+
+  function selectTab(tab: ReviewTab) {
+    setActiveTab(tab)
+    setSelectedKey(null)
+    setSelectedViewId(null)
+    setActionError('')
+    setNotice('')
+    setFeedback('')
+  }
+
+  function refresh() {
+    setIsRefreshing(true)
+    refreshState()
+    setIsRefreshing(false)
+  }
+
+  function saveRevision() {
+    if (!selectedProposal || !editedDefinition || !editable || !dirty) return
+    setActionError('')
+    setNotice('')
+    try {
+      const saved = saveMappingRevision(
+        selectedProposal.mappingId,
+        selectedProposal.revision,
+        editedDefinition,
+      )
+      const nextState = loadMockReviewState()
+      setState(nextState)
+      setActiveTab('pending')
+      setSelectedKey(proposalKey(saved))
+      setSelectedViewId(null)
+      setEditedProposal({
+        key: proposalKey(saved),
+        definition: cloneDefinition(saved.definition),
+      })
+      setFeedback('')
+      setNotice(`Revision ${saved.revision} saved as a new pending definition.`)
+    } catch (error) {
+      setActionError(
+        error instanceof Error
+          ? error.message
+          : 'The mapping revision could not be saved.',
+      )
+      refreshState()
+    }
+  }
+
+  function submitDecision(decision: 'approved' | 'changes_requested') {
+    if (!selectedProposal || !editable || dirty) return
+    if (decision === 'changes_requested' && !feedback.trim()) {
+      setActionError('Add actionable feedback about the mapping before requesting changes.')
       return
     }
-
-    setIsSubmitting(true)
     setActionError('')
-    setSuccessMessage('')
-
+    setNotice('')
     try {
-      const updatedDraft = await decideReviewDraft(mode, {
-        draft: selectedDraft,
+      const updated = decideMappingProposal(
+        selectedProposal.mappingId,
+        selectedProposal.revision,
         decision,
-        expectedRevision: selectedDraft.revision,
-        feedback: decision === 'rejected' ? feedback.trim() : undefined,
-      })
-      const [loadedDrafts, loadedHistory] = await Promise.all([
-        loadReviewDrafts(mode),
-        loadReviewDrafts(mode, true),
-      ])
-      setLatestDrafts(loadedDrafts)
-      setHistoryDrafts(loadedHistory)
+        feedback,
+      )
+      setState(loadMockReviewState())
       setActiveTab('history')
-      setSelectedKey(`${updatedDraft.draftId}:${updatedDraft.revision}`)
+      setSelectedKey(proposalKey(updated))
       setFeedback('')
-      setSuccessMessage(
-        `Revision ${updatedDraft.revision} ${decision === 'approved' ? 'approved' : 'rejected'} successfully.`,
+      setNotice(
+        decision === 'approved'
+          ? `Definition revision ${updated.revision} approved and published for mock requests.`
+          : `Changes requested for definition revision ${updated.revision}.`,
       )
     } catch (error) {
-      if (
-        typeof error === 'object' &&
-        error !== null &&
-        'status' in error &&
-        error.status === 409
-      ) {
-        setActionError(
-          'This draft changed after it was loaded. Refresh the draft list and review the latest revision.',
-        )
-        void refreshDrafts()
-      } else {
-        setActionError(
-          error instanceof Error
-            ? error.message
-            : 'The review action could not be completed. Please try again.',
-        )
-      }
-    } finally {
-      setIsSubmitting(false)
+      setActionError(
+        error instanceof Error ? error.message : 'The mapping review action failed.',
+      )
+      refreshState()
     }
+  }
+
+  function resetDemo() {
+    resetMockReviewState()
+    setSelectedKey(null)
+    setActiveTab('pending')
+    setEditedProposal(null)
+    setFeedback('')
+    setActionError('')
+    setNotice('Mock review data reset.')
   }
 
   return (
@@ -189,281 +284,326 @@ export default function ReviewWorkspace() {
         <div className="topbar-inner">
           <Link className="brand" href="/" aria-label="GenLedge home">
             gen<span>ledge</span>
-            <span className="brand-mark" aria-hidden="true">
-              ↗
-            </span>
+            <span className="brand-mark" aria-hidden="true">↗</span>
           </Link>
           <nav className="breadcrumb" aria-label="Breadcrumb">
             <Link href="/">Workspace</Link>
-            <span className="breadcrumb-chevron" aria-hidden="true">
-              ›
-            </span>
-            <Link href="/demo">Business demo</Link>
-            <span className="breadcrumb-chevron" aria-hidden="true">
-              ›
-            </span>
-            <span className="breadcrumb-current">Report review</span>
+            <span className="breadcrumb-chevron" aria-hidden="true">›</span>
+            <span className="breadcrumb-current">Definition review</span>
           </nav>
         </div>
       </header>
 
-      <section className="review-page" aria-labelledby="review-title">
+      <section className="review-page mapping-review-page" aria-labelledby="review-title">
         <div className="review-heading">
           <div>
-            <p className="review-eyebrow">GenLedge · D2 reviewer workspace</p>
-            <h1 id="review-title">Report review</h1>
+            <p className="review-eyebrow">GenLedge · D2 data engineer workspace</p>
+            <h1 id="review-title">Report definition review</h1>
             <p className="review-subtitle">
-              Inspect each draft and record a decision on the displayed revision.
+              Review source mappings and report structure—not narrative or financial
+              results.
             </p>
           </div>
           <div className="review-heading-actions">
-            {mode && (
-              <span className={`review-demo-label review-mode-${mode}`}>
-                <span aria-hidden="true" />
-                {mode === 'real'
-                  ? 'REAL BACKEND · LOCAL DEV ONLY'
-                  : 'MOCK · browser-local data'}
-              </span>
-            )}
+            <span className="review-demo-label review-mode-mock">
+              <span aria-hidden="true" />
+              MOCK · browser-local data
+            </span>
             <button
               className="review-button review-button-secondary"
               disabled={isLoading || isRefreshing}
-              onClick={() => void refreshDrafts()}
+              onClick={refresh}
               type="button"
             >
               {isRefreshing ? 'Refreshing…' : 'Refresh'}
             </button>
+            <button
+              className="review-button review-button-secondary"
+              onClick={resetDemo}
+              type="button"
+            >
+              Reset demo
+            </button>
           </div>
         </div>
-        {mode === 'real' && (
-          <p className="review-local-auth-note">
-            Localhost-only development demo; there is no reviewer login and this is
-            not production authentication.
-          </p>
-        )}
+
+        <aside className="mapping-demo-notice">
+          This screen reviews reusable mapping definitions. No warehouse schema was
+          discovered, no SQL was run, and no report figures are being approved.
+        </aside>
 
         {isLoading ? (
-          <div className="review-state" role="status">
-            <span className="review-spinner" aria-hidden="true" />
-            Loading report drafts…
-          </div>
+          <div className="review-state" role="status">Loading mock mapping proposals…</div>
         ) : loadError ? (
           <div className="review-state review-state-error" role="alert">
             <p>{loadError}</p>
-            <button
-              className="review-button review-button-secondary"
-              onClick={() => window.location.reload()}
-              type="button"
-            >
+            <button className="review-button review-button-secondary" onClick={refresh} type="button">
               Try again
             </button>
           </div>
         ) : (
           <>
-          <div className="review-tabs" role="tablist" aria-label="Draft status">
-            <button
-              aria-selected={activeTab === 'pending'}
-              className={`review-tab${activeTab === 'pending' ? ' is-active' : ''}`}
-              onClick={() => {
-                setActiveTab('pending')
-                const first = pendingDrafts[0]
-                setSelectedKey(first ? `${first.draftId}:${first.revision}` : null)
-                setActionError('')
-              }}
-              role="tab"
-              type="button"
-            >
-              Pending <span>{pendingDrafts.length}</span>
-            </button>
-            <button
-              aria-selected={activeTab === 'history'}
-              className={`review-tab${activeTab === 'history' ? ' is-active' : ''}`}
-              onClick={() => {
-                setActiveTab('history')
-                const first = completedDrafts[0]
-                setSelectedKey(first ? `${first.draftId}:${first.revision}` : null)
-                setActionError('')
-              }}
-              role="tab"
-              type="button"
-            >
-              History <span>{completedDrafts.length}</span>
-            </button>
-          </div>
-          {visibleDrafts.length === 0 ? (
-            <div className="review-state">
-              <span className="review-empty-icon" aria-hidden="true">
-                ✓
-              </span>
-              <h2>
-                {activeTab === 'pending'
-                  ? 'No drafts awaiting review'
-                  : 'No completed reviews yet'}
-              </h2>
-              <p>
-                {activeTab === 'pending'
-                  ? 'New report drafts will appear here when they are ready.'
-                  : 'Approved and rejected revisions will remain available here.'}
-              </p>
+            <div className="review-tabs" role="tablist" aria-label="Mapping proposal status">
+              <button
+                aria-selected={activeTab === 'pending'}
+                className={`review-tab${activeTab === 'pending' ? ' is-active' : ''}`}
+                onClick={() => selectTab('pending')}
+                role="tab"
+                type="button"
+              >
+                Pending <span>{pendingProposals.length}</span>
+              </button>
+              <button
+                aria-selected={activeTab === 'history'}
+                className={`review-tab${activeTab === 'history' ? ' is-active' : ''}`}
+                onClick={() => selectTab('history')}
+                role="tab"
+                type="button"
+              >
+                Review history <span>{historyProposals.length}</span>
+              </button>
             </div>
-          ) : (
-          <div className="review-layout">
-            <aside className="review-queue" aria-label="Report drafts">
-              <div className="review-queue-heading">
-                <h2>{activeTab === 'pending' ? 'Draft queue' : 'Review history'}</h2>
-                <span>{visibleDrafts.length}</span>
+
+            {visibleProposals.length === 0 ? (
+              <div className="review-state">
+                <span className="review-empty-icon" aria-hidden="true">
+                  {activeTab === 'pending' ? '↗' : '✓'}
+                </span>
+                <h2>
+                  {activeTab === 'pending'
+                    ? 'No definitions awaiting review'
+                    : 'No mapping history yet'}
+                </h2>
+                <p>
+                  {activeTab === 'pending'
+                    ? 'Submit a mock definition request from the business workspace to start the flow.'
+                    : 'Approved, changed, and superseded definition revisions will be retained here.'}
+                </p>
+                {activeTab === 'pending' && (
+                  <p>Submit a request from the separate business-user screen to start the workflow.</p>
+                )}
               </div>
-              <ul>
-                {visibleDrafts.map((draft) => {
-                  const draftKey = `${draft.draftId}:${draft.revision}`
-                  return (
-                  <li key={draftKey}>
-                    <button
-                      aria-current={draftKey === selectedKey ? 'true' : undefined}
-                      className={`review-draft-option${draftKey === selectedKey ? ' is-selected' : ''}`}
-                      onClick={() => {
-                        setSelectedKey(draftKey)
-                        setFeedback('')
-                        setActionError('')
-                        setSuccessMessage('')
-                      }}
-                      type="button"
-                    >
-                      <span className="review-draft-option-top">
-                        <span>{String(draft.reportPayload.title ?? 'Untitled report')}</span>
-                        <StatusBadge status={draft.status} />
-                      </span>
-                      <span className="review-draft-option-meta">
-                        Revision {draft.revision} <span aria-hidden="true">·</span>{' '}
-                        {formatDate(draft.updatedAt)}
-                      </span>
-                    </button>
-                  </li>
-                  )
-                })}
-              </ul>
-            </aside>
-
-            {selectedDraft && (
-              <article className="review-detail">
-                <header className="review-detail-header">
-                  <div>
-                    <div className="review-detail-kicker">
-                      <span>Draft {selectedDraft.draftId.slice(0, 8)}</span>
-                      <span aria-hidden="true">·</span>
-                      <span>Revision {selectedDraft.revision}</span>
-                    </div>
-                    <h2>{String(selectedDraft.reportPayload.title ?? 'Untitled report')}</h2>
+            ) : (
+              <div className="review-layout mapping-review-layout">
+                <aside className="review-queue" aria-label="Mapping proposals">
+                  <div className="review-queue-heading">
+                    <h2>{activeTab === 'pending' ? 'Pending queue' : 'Revision history'}</h2>
+                    <span>{visibleProposals.length}</span>
                   </div>
-                  <StatusBadge status={selectedDraft.status} />
-                </header>
-
-                <div className="review-meta">
-                  <div>
-                    <span>Conversation</span>
-                    <strong>{selectedDraft.conversationId}</strong>
-                  </div>
-                  <div>
-                    <span>Last updated</span>
-                    <strong>{formatDate(selectedDraft.updatedAt)}</strong>
-                  </div>
-                  {selectedDraft.reviewedAt && (
-                    <div>
-                      <span>Reviewed</span>
-                      <strong>{formatDate(selectedDraft.reviewedAt)}</strong>
-                    </div>
-                  )}
-                </div>
-
-                <section className="review-panel" aria-labelledby="report-preview-title">
-                  <div className="review-panel-heading">
-                    <div>
-                      <p className="review-eyebrow">Structured payload</p>
-                      <h3 id="report-preview-title">Report preview</h3>
-                    </div>
-                    <span>Reviewer view</span>
-                  </div>
-                  <div className="review-payload">
-                    <PayloadValue value={selectedDraft.reportPayload} />
-                  </div>
-                </section>
-
-                {selectedDraft.rejectionFeedback && (
-                  <section className="review-feedback-note" aria-label="Rejection feedback">
-                    <strong>Previous reviewer feedback</strong>
-                    <p>{selectedDraft.rejectionFeedback}</p>
-                  </section>
-                )}
-
-                <section className="review-evidence-placeholder" aria-labelledby="evidence-title">
-                  <span className="review-evidence-icon" aria-hidden="true">
-                    ◌
-                  </span>
-                  <div>
-                    <h3 id="evidence-title">Evidence inspector</h3>
-                    <p>
-                      Evidence details are not connected yet. The existing
-                      EvidenceInspector will be shown here when the protected evidence
-                      API is integrated.
-                    </p>
-                  </div>
-                  <span className="review-coming-soon">Coming soon</span>
-                </section>
-
-                {activeTab === 'pending' && selectedDraft.status === 'pending' && (
-                  <section className="review-decision" aria-labelledby="decision-title">
-                    <div>
-                      <p className="review-eyebrow">Decision</p>
-                      <h3 id="decision-title">Record your review</h3>
-                    </div>
-                    <label className="review-feedback-label" htmlFor="review-feedback">
-                      Feedback <span>(required to reject)</span>
-                    </label>
-                    <textarea
-                      id="review-feedback"
-                      maxLength={4000}
-                      onChange={(event) => setFeedback(event.target.value)}
-                      placeholder="Share what should be corrected before this report is approved…"
-                      value={feedback}
-                    />
-                    <div className="review-decision-footer">
-                      <span>{feedback.length}/4000 characters</span>
-                      <div className="review-actions">
+                  <ul>
+                    {visibleProposals.map((proposal) => (
+                      <li key={proposalKey(proposal)}>
                         <button
-                          className="review-button review-button-reject"
-                          disabled={isSubmitting}
-                          onClick={() => void submitDecision('rejected')}
+                          aria-current={
+                            proposalKey(proposal) === selectedProposalKey
+                              ? 'true'
+                              : undefined
+                          }
+                          className={`review-draft-option${proposalKey(proposal) === selectedProposalKey ? ' is-selected' : ''}`}
+                          onClick={() => {
+                            setSelectedKey(proposalKey(proposal))
+                            setSelectedViewId(null)
+                            setEditedProposal({
+                              key: proposalKey(proposal),
+                              definition: cloneDefinition(proposal.definition),
+                            })
+                            setFeedback('')
+                            setActionError('')
+                            setNotice('')
+                          }}
                           type="button"
                         >
-                          {isSubmitting ? 'Saving…' : 'Reject draft'}
+                          <span className="review-draft-option-top">
+                            <span>{proposal.definition.title}</span>
+                            <span className={`mapping-status mapping-status-${proposal.status}`}>
+                              {statusLabel(proposal.status)}
+                            </span>
+                          </span>
+                          <span className="review-draft-option-meta">
+                            Revision {proposal.revision} · {formatDate(proposal.updatedAt)}
+                          </span>
                         </button>
-                        <button
-                          className="review-button review-button-approve"
-                          disabled={isSubmitting}
-                          onClick={() => void submitDecision('approved')}
-                          type="button"
-                        >
-                          {isSubmitting ? 'Saving…' : 'Approve report'}
-                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </aside>
+
+                {selectedProposal && editedDefinition && (
+                  <article className="review-detail mapping-review-detail">
+                    <header className="review-detail-header">
+                      <div>
+                        <div className="review-detail-kicker">
+                          <span>Definition {selectedProposal.mappingId.slice(0, 13)}</span>
+                          <span aria-hidden="true">·</span>
+                          <span>Revision {selectedProposal.revision}</span>
+                        </div>
+                        <h2>{selectedProposal.definition.title}</h2>
                       </div>
-                    </div>
-                  </section>
-                )}
+                      <span className={`mapping-status mapping-status-${selectedProposal.status}`}>
+                        {statusLabel(selectedProposal.status)}
+                      </span>
+                    </header>
 
-                {successMessage && (
-                  <p className="review-feedback-message review-feedback-success" role="status">
-                    {successMessage}
-                  </p>
+                    <ReportDefinitionPreview
+                      definition={editedDefinition}
+                      onSelectView={setSelectedViewId}
+                      selectedViewId={selectedViewId}
+                    />
+                    {focusedView && (
+                      <section className="review-lineage-focus" aria-labelledby="review-lineage-focus-title">
+                        <div>
+                          <p className="review-eyebrow">Selected component trace</p>
+                          <h3 id="review-lineage-focus-title">{focusedView.title}</h3>
+                          <p>
+                            Illustrative agent path: {focusedSources.join(', ') || 'No source fields mapped'}{' '}
+                            → Filters: {focusedFilters.join('; ') || 'none listed'} →{' '}
+                            {focusedTransformations.join('; ') || 'No transformation listed'} →{' '}
+                            {focusedOutputs.join(', ') || 'No output fields bound'} → {focusedView.title}.
+                          </p>
+                        </div>
+                        <MappingLineageCanvas
+                          definition={editedDefinition}
+                          focusedViewId={focusedView.id}
+                        />
+                      </section>
+                    )}
+
+                    <section className="mapping-request-summary">
+                      <p className="review-eyebrow">Business request</p>
+                      <p>{selectedProposal.requestText}</p>
+                      {selectedProposal.clarificationText && (
+                        <p>Business clarification: {selectedProposal.clarificationText}</p>
+                      )}
+                      <span>
+                        Submitted {formatDate(selectedProposal.createdAt)} · Mock proposal
+                      </span>
+                    </section>
+
+                    <MappingDefinitionEditor
+                      definition={editedDefinition}
+                      editable={editable}
+                      onChange={updateEditedDefinition}
+                    />
+
+                    {selectedProposal.status === 'changes_requested' &&
+                      selectedProposal.reviewHistory
+                        .filter(
+                          (event) =>
+                            event.action === 'changes_requested' &&
+                            event.revision === selectedProposal.revision,
+                        )
+                        .map((event) => (
+                          <section className="mapping-feedback-callout" key={event.id}>
+                            <strong>Actionable mapping feedback</strong>
+                            <p>{event.feedback}</p>
+                          </section>
+                        ))}
+
+                    {selectedProposal.status === 'approved' && editable && (
+                      <p className="mapping-unsaved-note">
+                        Editing an approved definition and saving a revision will
+                        withdraw the older approval until the new revision is reviewed.
+                      </p>
+                    )}
+
+                    {selectedProposal.reviewHistory.length > 0 && (
+                      <details className="mapping-history">
+                        <summary>Review history ({selectedProposal.reviewHistory.length})</summary>
+                        <ol>
+                          {selectedProposal.reviewHistory.map((event) => (
+                            <li key={event.id}>
+                              <span className="mapping-history-marker" aria-hidden="true" />
+                              <div>
+                                <strong>
+                                  Revision {event.revision} · {statusLabel(event.action)}
+                                </strong>
+                                <p>{event.summary}</p>
+                                {event.feedback && <p className="mapping-history-feedback">{event.feedback}</p>}
+                                <time dateTime={event.createdAt}>
+                                  {event.actor} · {formatDate(event.createdAt)}
+                                </time>
+                              </div>
+                            </li>
+                          ))}
+                        </ol>
+                      </details>
+                    )}
+
+                    {editable && (
+                      <section className="mapping-decision-panel" aria-labelledby="mapping-decision-title">
+                        <div>
+                          <p className="review-eyebrow">Data engineer decision</p>
+                          <h3 id="mapping-decision-title">Review the definition structure</h3>
+                          <p>
+                            Approve the reusable mapping, or request specific changes
+                            to its sources, lineage, filters, transformations, or layout.
+                          </p>
+                        </div>
+                        {selectedProposal.status === 'pending' && (
+                          <label className="mapping-form-field" htmlFor="mapping-feedback">
+                            <span>Actionable feedback · required to request changes</span>
+                            <textarea
+                              id="mapping-feedback"
+                              maxLength={2000}
+                              onChange={(event) => setFeedback(event.target.value)}
+                              placeholder="For example: map the reporting date from approved_at rather than created_at."
+                              value={feedback}
+                            />
+                          </label>
+                        )}
+                        {dirty && (
+                          <p className="mapping-unsaved-note">
+                            Unsaved edits change the preview. Save them as a new revision
+                            before approving or requesting changes.
+                          </p>
+                        )}
+                        {actionError && <p className="review-feedback-message review-feedback-error" role="alert">{actionError}</p>}
+                        <div className="mapping-decision-actions">
+                          {dirty && (
+                            <button
+                              className="review-button review-button-approve"
+                              onClick={saveRevision}
+                              type="button"
+                            >
+                              Save as new revision
+                            </button>
+                          )}
+                          {!dirty && selectedProposal.status === 'pending' && (
+                            <>
+                              <button
+                                className="review-button review-button-reject"
+                                onClick={() => submitDecision('changes_requested')}
+                                type="button"
+                              >
+                                Request changes
+                              </button>
+                              <button
+                                className="review-button review-button-approve"
+                                onClick={() => submitDecision('approved')}
+                                type="button"
+                              >
+                                Approve definition
+                              </button>
+                            </>
+                          )}
+                          {selectedProposal.status === 'changes_requested' && !dirty && (
+                            <p className="mapping-unsaved-note">
+                              Edit the structured fields above and save a corrected revision.
+                            </p>
+                          )}
+                        </div>
+                      </section>
+                    )}
+
+                    {notice && (
+                      <p className="review-feedback-message review-feedback-success" role="status">
+                        {notice}
+                      </p>
+                    )}
+                  </article>
                 )}
-                {actionError && (
-                  <p className="review-feedback-message review-feedback-error" role="alert">
-                    {actionError}
-                  </p>
-                )}
-              </article>
+              </div>
             )}
-          </div>
-          )}
           </>
         )}
       </section>

@@ -1,10 +1,10 @@
-import BusinessWorkspace from '../../components/review/BusinessWorkspace'
+import ReportWorkflowDemo from '../../components/review/ReportWorkflowDemo'
 
 export const metadata = {
-  title: 'Business report demo | GenLedge',
-  description: 'Submit a sample report and view it after approval.',
+  title: 'Report workflow | GenLedge',
+  description: 'Walk through the mock report definition request and review flow.',
 }
 
 export default function DemoPage() {
-  return <BusinessWorkspace />
+  return <ReportWorkflowDemo />
 }
