@@ -16,9 +16,16 @@ CSC301 team project for GenLedge's agentic analytics capability. The goal is to 
 
 This repository contains the Deliverable 1 planning materials and an active Deliverable 2 implementation using Next.js/React/TypeScript and FastAPI. Current components include reusable chart rendering, PostgreSQL-backed draft review/approval services, revision and feedback handling, a safe SQL validator and typed evidence contracts, and local two-screen report-review demo interfaces at `/demo` (business) and `/review` (reviewer).
 
-The demo **mock** workflow has been exercised end to end. The **real PostgreSQL-backed browser workflow** has not yet been verified across both screens. The current demo uses fixed sample reports rather than Agent Harness output. The shared Supabase connection has been verified; schema migrations on the shared database remain coordinated team work. SQL execution against live warehouse data, evidence persistence/retrieval, automated reviewer-feedback-to-agent handoff, dynamic source/tool discovery and durable agent checkpoints remain integration or target-state tasks.
+The demo **mock** workflow has been exercised end to end. The **real PostgreSQL-backed browser workflow** has not yet been verified across both screens. The current demo uses fixed sample reports rather than Agent Harness output. The shared Supabase connection has been verified; schema migrations on the shared database remain coordinated team work. Live warehouse query execution, evidence persistence/retrieval, conversation-to-agent wiring, and the source/report adapters remain team integration tasks.
 
 The localhost reviewer boundary uses a shared demo secret and does **not** provide production authentication. Never expose it to the LAN or a public deployment.
+
+The persistent cash-flow agent harness and its typed service handoffs are
+documented in [`docs/agent-harness.md`](docs/agent-harness.md). The runtime,
+OpenAI Responses adapter, PostgreSQL checkpoints, and idempotent review gateway
+are implemented. Live discovery/report/evidence services and the conversation
+UI still require team integration; the complete live-model browser demo has
+not been verified. The existing `/api/chat` remains the sample-response scaffold.
 
 ## Task management and communication
 

@@ -48,12 +48,18 @@ class ReviewRepository(Protocol):
 
 
 class PostgresReviewRepository:
-    def __init__(self, database_url: str) -> None:
+    def __init__(self, database_url: str, *, connection: psycopg.Connection | None = None) -> None:
         self._database_url = database_url
+        # Allows a trusted caller to commit an idempotency receipt atomically
+        # with the review insert. The caller owns this transaction/connection.
+        self._borrowed_connection = connection
 
     @contextmanager
     def _connection(self) -> Generator[psycopg.Connection[dict[str, object]], None, None]:
         try:
+            if self._borrowed_connection is not None:
+                yield self._borrowed_connection
+                return
             with psycopg.connect(
                 self._database_url,
                 row_factory=dict_row,
